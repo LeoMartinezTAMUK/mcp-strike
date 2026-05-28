@@ -1,0 +1,36 @@
+# GitHub Actions CI for MCP-Strike.
+#
+# Runs ruff (lint) and pytest on every push and pull request.
+# Keeps the matrix small for Phase 0 — we can expand to multiple OS / Python
+# versions later when there's enough code to justify it.
+
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        # uv is our package + venv manager; the official action handles caching.
+        uses: astral-sh/setup-uv@v3
+        with:
+          # Match the project's minimum supported Python.
+          python-version: "3.10"
+
+      - name: Install dependencies
+        # `--extra dev` pulls in pytest + ruff alongside runtime deps.
+        run: uv sync --extra dev
+
+      - name: Ruff (lint)
+        run: uv run ruff check .
+
+      - name: Pytest
+        run: uv run pytest

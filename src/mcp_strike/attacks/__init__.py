@@ -1,0 +1,37 @@
+"""Attack modules.
+
+Importing this package imports every concrete attack, which causes each
+attack class to register itself with the module-level registry (via the
+``@register_attack`` decorator). After importing this package, callers can
+use :func:`get_all_attacks` to discover what's available.
+
+The imports below are isort-sorted. The submodule imports
+(``description_injection`` et al.) are kept for their *side effect* —
+their module bodies decorate each attack class with ``@register_attack``
+at import time, populating the registry. The order of those imports
+doesn't matter; the registry stores by name.
+
+See docs/PLAN.md §7 for the taxonomy of attacks planned for v1.
+"""
+
+from mcp_strike.attacks import (  # noqa: F401  (imported for side effects)
+    description_injection,
+    overreaching_parameters,
+    path_traversal,
+)
+from mcp_strike.attacks.base import AttackResult, BaseAttack, Stage, Verdict
+from mcp_strike.attacks.registry import (
+    get_all_attacks,
+    get_attack,
+    register_attack,
+)
+
+__all__ = [
+    "AttackResult",
+    "BaseAttack",
+    "Stage",
+    "Verdict",
+    "get_all_attacks",
+    "get_attack",
+    "register_attack",
+]

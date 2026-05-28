@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Virtual envs (uv puts its venv in .venv by default)
+.venv/
+venv/
+
+# Secrets — env files are NEVER committed. See .env.example for the template.
+.env
+.env.*
+!.env.example
+
+# Editor / OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# uv lockfile location is up to the project; keep it tracked normally.
+# (uv.lock should be committed for reproducible builds. Don't ignore it.)

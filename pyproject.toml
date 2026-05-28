@@ -1,0 +1,101 @@
+# pyproject.toml — MCP-Strike
+#
+# Distribution name (PyPI): mcp-strike
+# Importable Python package: mcp_strike
+# Managed with `uv`. See README for setup commands.
+
+[project]
+name = "mcp-strike"
+version = "0.0.0"
+description = "Active, runtime adversarial testing for MCP servers you own."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [{ name = "Leo" }]
+keywords = ["mcp", "security", "red-team", "llm", "adversarial"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+]
+
+# Runtime dependencies. All chosen in docs/PLAN.md §8; no new heavy deps added here.
+dependencies = [
+    "mcp>=1.10",      # Official MCP Python SDK (verified on PyPI; maintained by Anthropic).
+    "typer>=0.12",    # CLI framework (used in later phases; declared now so the package imports cleanly).
+    "rich>=13.7",     # Pretty terminal output.
+    "httpx>=0.27",    # HTTP client (for future HTTP-transport MCP support + LLM API calls).
+    "pydantic>=2.7",  # Config + data models.
+]
+
+[project.optional-dependencies]
+# Dev tools — installed via `uv sync --extra dev`.
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.5",
+]
+
+[project.scripts]
+# Registers the `mcp-strike` console script. Typer's `app` object is
+# callable, so this entry point invokes the CLI when run from the shell.
+mcp-strike = "mcp_strike.cli:app"
+
+[project.urls]
+Repository = "https://github.com/leo/mcp-strike"
+
+# -----------------------------------------------------------------------------
+# Build system
+# -----------------------------------------------------------------------------
+# Hatchling is the default uv-friendly backend. We use a `src/` layout, so we
+# explicitly tell hatch where the package lives.
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mcp_strike"]
+
+# -----------------------------------------------------------------------------
+# Ruff (lint + format)
+# -----------------------------------------------------------------------------
+
+[tool.ruff]
+# Match the project's minimum supported Python.
+target-version = "py310"
+line-length = 100
+# Lint both production code and tests + the demo server.
+src = ["src", "tests", "demo_server"]
+
+[tool.ruff.lint]
+# A small, opinionated rule set. We can expand later; for now keep it readable.
+#   E,W = pycodestyle errors/warnings
+#   F   = pyflakes (unused imports etc.)
+#   I   = isort (import ordering)
+#   UP  = pyupgrade (modern Python idioms)
+#   B   = flake8-bugbear (common bug patterns)
+select = ["E", "W", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+# Typer's idiomatic CLI pattern puts `typer.Option(...)` and
+# `typer.Argument(...)` calls in function-argument defaults. Ruff's B008
+# ("no function calls in defaults") is meant for ordinary code where this
+# would be a shared-mutable-default bug; with typer it isn't (typer copies
+# defaults per invocation). The narrow scope keeps the rule active everywhere
+# else in the project.
+"src/mcp_strike/cli.py" = ["B008"]
+
+# -----------------------------------------------------------------------------
+# Pytest
+# -----------------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+# Where to look for tests, and how to make src/ importable without installing.
+testpaths = ["tests"]
+pythonpath = ["src", "."]
+addopts = "-ra"
