@@ -1,6 +1,12 @@
-"""Adaptive red-team agent (placeholder).
+"""Adaptive red-team agent (Phase 3).
 
-Phase 0 stub. The adaptive attacker loop lands in Phase 3 — given a tool
-surface, an LLM proposes and mutates attacks, observes results, and iterates.
-See docs/PLAN.md §10.
+Given a tool surface, an LLM loop proposes and mutates attacks, observes
+results, and iterates. The agent emits one :class:`AttackResult` per tool
+with ``attack_name = "adaptive_agent"``.
+
+See docs/PLAN.md §6 / §10.
 """
+
+from mcp_strike.agent.adaptive import ATTACK_NAME, AdaptiveAgent
+
+__all__ = ["ATTACK_NAME", "AdaptiveAgent"]

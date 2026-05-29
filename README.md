@@ -34,6 +34,18 @@ After `uv sync --extra dev`:
 uv run mcp-strike list-attacks     # show every registered attack
 uv run mcp-strike demo             # scan the bundled vulnerable demo server
 uv run mcp-strike scan --command python --arg -m --arg your_mcp_server
+uv run mcp-strike demo --json      # machine-readable JSON report
+```
+
+To enable the LLM-as-judge (Phase 2), set `OPENAI_API_KEY` in your shell or in a `.env` file at the repo root (auto-loaded by the CLI):
+
+```bash
+# Either:
+export OPENAI_API_KEY=sk-...
+# Or write to .env (gitignored):
+echo "OPENAI_API_KEY=sk-..." > .env
+
+uv run mcp-strike demo             # judge runs automatically (gpt-4o-mini)
 ```
 
 ## Development setup

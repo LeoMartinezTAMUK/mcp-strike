@@ -15,11 +15,19 @@ See docs/PLAN.md §7 for the taxonomy of attacks planned for v1.
 """
 
 from mcp_strike.attacks import (  # noqa: F401  (imported for side effects)
+    data_exfiltration,
     description_injection,
     overreaching_parameters,
     path_traversal,
+    response_injection,
 )
-from mcp_strike.attacks.base import AttackResult, BaseAttack, Stage, Verdict
+from mcp_strike.attacks.base import (
+    AttackResult,
+    BaseAttack,
+    JudgeAnnotation,
+    Stage,
+    Verdict,
+)
 from mcp_strike.attacks.registry import (
     get_all_attacks,
     get_attack,
@@ -29,6 +37,7 @@ from mcp_strike.attacks.registry import (
 __all__ = [
     "AttackResult",
     "BaseAttack",
+    "JudgeAnnotation",
     "Stage",
     "Verdict",
     "get_all_attacks",

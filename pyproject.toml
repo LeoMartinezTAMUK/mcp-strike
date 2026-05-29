@@ -31,6 +31,7 @@ dependencies = [
     "rich>=13.7",     # Pretty terminal output.
     "httpx>=0.27",    # HTTP client (for future HTTP-transport MCP support + LLM API calls).
     "pydantic>=2.7",  # Config + data models.
+    "openai>=1.40",   # OpenAI Python SDK — used by the Phase-2 LLM-as-judge.
 ]
 
 [project.optional-dependencies]

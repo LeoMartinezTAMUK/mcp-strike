@@ -39,6 +39,28 @@ class Verdict(str, Enum):
 
 
 @dataclass
+class JudgeAnnotation:
+    """An LLM judge's opinion on an AttackResult.
+
+    Produced by :class:`mcp_strike.judge.BaseJudge` implementations and
+    attached to :attr:`AttackResult.judge` by the scan pipeline. Lives next
+    to AttackResult (as data) so the judge module can depend on attacks
+    one-way without a circular import.
+    """
+
+    # The judge's verdict. May agree with or override the heuristic verdict.
+    verdict: Verdict
+    # Short human-readable explanation from the judge.
+    rationale: str
+    # Model name that produced this opinion. Empty string when the judge
+    # didn't actually run (e.g. NullJudge, or the call cap was reached).
+    model: str
+    # ``False`` when the judge was disabled or capped out; ``True`` when an
+    # LLM call actually happened.
+    ran: bool
+
+
+@dataclass
 class AttackResult:
     """The outcome of one attack against one target component.
 
@@ -55,6 +77,10 @@ class AttackResult:
     # Optional structured evidence — e.g. matched substrings, payloads tried.
     # Attacks are responsible for keeping this small so reports stay readable.
     evidence: dict[str, Any] = field(default_factory=dict)
+    # Optional judge opinion. ``None`` until the scan pipeline runs a judge
+    # over this result (and possibly even after, if the judge was disabled
+    # or skipped this row).
+    judge: JudgeAnnotation | None = None
 
 
 class BaseAttack(abc.ABC):

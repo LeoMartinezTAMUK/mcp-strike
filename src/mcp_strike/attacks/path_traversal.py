@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from mcp_strike.attacks._helpers import response_text
 from mcp_strike.attacks.base import (
     AttackResult,
     BaseAttack,
@@ -50,21 +51,6 @@ def _first_string_parameter(schema: dict[str, Any]) -> str | None:
         if isinstance(spec, dict) and spec.get("type") == "string":
             return name
     return None
-
-
-def _response_text(call_result: Any) -> str:
-    """Concatenate any text content blocks in a CallToolResult.
-
-    Duck-typed deliberately: we don't want to import MCP's specific content
-    classes here, so we just look for a ``.text`` attribute on each block.
-    Non-text content (images, embedded resources) is ignored.
-    """
-    parts: list[str] = []
-    for block in getattr(call_result, "content", []) or []:
-        text = getattr(block, "text", None)
-        if isinstance(text, str):
-            parts.append(text)
-    return "\n".join(parts)
 
 
 @register_attack
@@ -107,7 +93,7 @@ class PathTraversalProbe(BaseAttack):
                 errored.append(payload)
                 continue
 
-            text = _response_text(call_result)
+            text = response_text(call_result)
             if signature in text:
                 return AttackResult(
                     attack_name=self.name,
