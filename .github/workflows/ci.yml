@@ -1,8 +1,12 @@
 # GitHub Actions CI for MCP-Strike.
 #
-# Runs ruff (lint) and pytest on every push and pull request.
-# Keeps the matrix small for Phase 0 — we can expand to multiple OS / Python
-# versions later when there's enough code to justify it.
+# Two jobs:
+#   1. ``lint-and-test`` runs ruff + pytest across every Python version we
+#      claim to support in pyproject.toml's classifiers (3.10 – 3.13).
+#   2. ``build-and-install`` builds the wheel + sdist, then installs the
+#      wheel into a clean venv and runs the CLI end-to-end. This catches
+#      packaging regressions like "demo_server isn't in the wheel" that a
+#      regular test pass would silently miss.
 
 name: ci
 
@@ -14,23 +18,71 @@ on:
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest
+    strategy:
+      # Keep collecting failures across versions so we see the full
+      # picture per push instead of bailing on the first red cell.
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
       - name: Install uv
-        # uv is our package + venv manager; the official action handles caching.
         uses: astral-sh/setup-uv@v3
         with:
-          # Match the project's minimum supported Python.
-          python-version: "3.10"
+          python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        # `--extra dev` pulls in pytest + ruff alongside runtime deps.
         run: uv sync --extra dev
 
       - name: Ruff (lint)
         run: uv run ruff check .
 
-      - name: Pytest
-        run: uv run pytest
+      - name: Mypy (type check, 3.10 only)
+        # Type-checking doesn't vary across Python versions in a way
+        # we'd act on — running once keeps CI fast and the report
+        # un-duplicated.
+        if: matrix.python-version == '3.10'
+        run: uv run mypy src/mcp_strike
+
+      - name: Pytest (with coverage on 3.10 only)
+        # Coverage doesn't vary across Python versions in any way we'd act
+        # on, so we only collect it once. Other matrix cells run the same
+        # tests without --cov to keep their output cleaner.
+        run: |
+          if [ "${{ matrix.python-version }}" = "3.10" ]; then
+            uv run pytest --cov
+          else
+            uv run pytest
+          fi
+
+  build-and-install:
+    runs-on: ubuntu-latest
+    # Only run after the test matrix passes — no point publishing-test a
+    # broken build.
+    needs: lint-and-test
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          python-version: "3.10"
+
+      - name: Build wheel + sdist
+        run: uv build
+
+      - name: Smoke-install the wheel into a clean venv
+        # Validates the stranger experience from PLAN.md §10: that after
+        # `pip install mcp-strike`, the CLI works including the bundled
+        # demo server. The `> /dev/null` on the demo run keeps stdout
+        # short — we just care about exit code 0.
+        run: |
+          uv venv /tmp/smoke
+          source /tmp/smoke/bin/activate
+          pip install dist/mcp_strike-*.whl
+          mcp-strike --version
+          mcp-strike list-attacks
+          mcp-strike demo --no-judge --no-agent --no-notice > /dev/null

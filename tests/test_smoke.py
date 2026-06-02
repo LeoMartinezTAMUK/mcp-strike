@@ -21,7 +21,7 @@ async def _discover_demo_tools_async() -> list[ToolInfo]:
     # itself is running under — no PATH guessing, no virtualenv surprises.
     async with open_stdio_target(
         command=sys.executable,
-        args=["-m", "demo_server"],
+        args=["-m", "mcp_strike.demo_server"],
     ) as target:
         return await target.list_tools()
 

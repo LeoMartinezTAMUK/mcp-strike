@@ -11,6 +11,41 @@ from __future__ import annotations
 
 from typing import Any
 
+# --- Truncation lengths for evidence-dict fields ----------------------------
+# Attacks store excerpts of response text in :attr:`AttackResult.evidence`
+# for reports and the JSON output. Cap them so reports stay readable and
+# JSON payloads don't balloon.
+
+#: Used when the attack found a vuln — give enough context to verify.
+EVIDENCE_EXCERPT_CHARS = 500
+#: Used when the attack found nothing — still include some context, but
+#: tighter since the row is mostly noise.
+EVIDENCE_SHORT_EXCERPT_CHARS = 200
+
+# Canonical prompt-injection markers. The patterns are pipeline-stage-
+# agnostic — an injection planted in a tool description and one planted
+# in a tool response look the same. Shared by
+# :mod:`mcp_strike.attacks.description_injection` and
+# :mod:`mcp_strike.attacks.response_injection` to avoid drift.
+#
+# Curated rather than exhaustive: a small list of high-confidence markers
+# keeps the false-positive rate low. We deliberately exclude generic
+# phrases like "you must" — they fire on legitimate descriptions ("you
+# must provide a city name") without buying meaningful recall.
+INJECTION_MARKERS: tuple[str, ...] = (
+    "ignore previous instructions",
+    "ignore all previous instructions",
+    "ignore the above",
+    "disregard previous",
+    "you are now",
+    "as an ai",
+    "system:",
+    "<|im_start|>",
+    "</system>",
+    "do not mention",
+    "do not tell the user",
+)
+
 
 def benign_args(schema: dict[str, Any]) -> dict[str, Any] | None:
     """Build a minimal valid args dict from a tool's JSON Schema.

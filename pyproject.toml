@@ -6,22 +6,36 @@
 
 [project]
 name = "mcp-strike"
-version = "0.0.0"
-description = "Active, runtime adversarial testing for MCP servers you own."
+version = "0.1.0"
+description = "Active, runtime adversarial testing for MCP servers — point it at your own server and find out what breaks."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
 authors = [{ name = "Leo" }]
-keywords = ["mcp", "security", "red-team", "llm", "adversarial"]
+keywords = [
+    "mcp",
+    "model-context-protocol",
+    "security",
+    "red-team",
+    "llm",
+    "adversarial",
+    "scanner",
+    "vulnerability",
+    "pentest",
+]
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Security",
+    "Topic :: Software Development :: Testing",
 ]
 
 # Runtime dependencies. All chosen in docs/PLAN.md §8; no new heavy deps added here.
@@ -38,6 +52,8 @@ dependencies = [
 # Dev tools — installed via `uv sync --extra dev`.
 dev = [
     "pytest>=8.0",
+    "pytest-cov>=4.0",  # coverage measurement; run via `uv run pytest --cov`
+    "mypy>=1.0",        # type-check; run via `uv run mypy src/mcp_strike`
     "ruff>=0.5",
 ]
 
@@ -47,7 +63,11 @@ dev = [
 mcp-strike = "mcp_strike.cli:app"
 
 [project.urls]
+# Update these to your actual GitHub URLs before publishing to PyPI.
+Homepage = "https://github.com/leo/mcp-strike"
 Repository = "https://github.com/leo/mcp-strike"
+Issues = "https://github.com/leo/mcp-strike/issues"
+Documentation = "https://github.com/leo/mcp-strike#readme"
 
 # -----------------------------------------------------------------------------
 # Build system
@@ -70,8 +90,8 @@ packages = ["src/mcp_strike"]
 # Match the project's minimum supported Python.
 target-version = "py310"
 line-length = 100
-# Lint both production code and tests + the demo server.
-src = ["src", "tests", "demo_server"]
+# Lint production code (which now includes mcp_strike.demo_server) and tests.
+src = ["src", "tests"]
 
 [tool.ruff.lint]
 # A small, opinionated rule set. We can expand later; for now keep it readable.
@@ -96,7 +116,63 @@ select = ["E", "W", "F", "I", "UP", "B"]
 # -----------------------------------------------------------------------------
 
 [tool.pytest.ini_options]
-# Where to look for tests, and how to make src/ importable without installing.
+# Where to look for tests, and how to make mcp_strike importable without
+# installing. We no longer need the repo root on pythonpath now that
+# `demo_server` lives inside the package (was needed pre-Phase-4 to find
+# `demo_server/` at the repo root).
 testpaths = ["tests"]
-pythonpath = ["src", "."]
+pythonpath = ["src"]
 addopts = "-ra"
+
+# -----------------------------------------------------------------------------
+# Coverage (pytest-cov)
+# -----------------------------------------------------------------------------
+# Default coverage scope = the production source. Tests live under tests/
+# and shouldn't count toward "lines covered" — that's a tautology.
+# Run with: uv run pytest --cov
+
+[tool.coverage.run]
+source = ["src/mcp_strike"]
+# Don't measure code paths only run when a user has an OPENAI_API_KEY set
+# locally — that path is exercised by integration tests gated on the env.
+# Keeping them out of the report avoids "uncovered" lines that aren't
+# really uncovered, just CI-skipped.
+omit = []
+
+[tool.coverage.report]
+# Surface the missing-line ranges right in the terminal report so we can
+# tell where to add a test.
+show_missing = true
+skip_covered = false
+# Don't fail the build on low coverage yet — Phase 4 polish is about
+# surfacing the number, not gating on it. Bump this when we have a
+# defensible floor.
+fail_under = 0
+
+# -----------------------------------------------------------------------------
+# Mypy (static type-checking)
+# -----------------------------------------------------------------------------
+# Run with: uv run mypy src/mcp_strike
+#
+# We start with moderate strictness rather than --strict. The goal at this
+# stage is "catch real type errors ruff doesn't, without forcing every edge
+# case to be over-annotated." Tighten as the codebase grows.
+
+[tool.mypy]
+python_version = "3.10"
+# Scope: production code only. Tests can stay loose — they're full of
+# fakes and ad-hoc shapes that benefit less from strict typing.
+files = ["src/mcp_strike"]
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unused_configs = true
+# Check the bodies of un-annotated functions too. Cheap recall boost.
+check_untyped_defs = true
+
+# Third-party SDKs whose type stubs aren't guaranteed. ``mcp`` ships
+# inline annotations but mypy has been known to have trouble resolving
+# them in some configurations; ``openai`` is similar. If we hit real
+# issues here we can pin specific overrides — for now, be permissive.
+[[tool.mypy.overrides]]
+module = ["mcp.*", "openai.*"]
+ignore_missing_imports = true

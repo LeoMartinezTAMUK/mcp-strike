@@ -1,12 +1,12 @@
-"""Entry point so the server can be launched as ``python -m demo_server``.
+"""Entry point so the server can be launched as ``python -m mcp_strike.demo_server``.
 
-We isolate this from ``server.py`` so importing the server (e.g. from a test)
-doesn't accidentally start the stdio event loop.
+We isolate this from ``server.py`` so importing the server module (e.g.
+from a test) doesn't accidentally start the stdio event loop.
 """
 
 import logging
 
-from demo_server.server import build_server
+from mcp_strike.demo_server.server import build_server
 
 
 def main() -> None:

@@ -14,6 +14,7 @@ Two pieces live here:
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
@@ -23,6 +24,11 @@ from mcp import ClientSession
 from mcp.types import CallToolResult
 
 from mcp_strike.client import open_stdio_session
+
+# Default per-call timeout in seconds. Applied to list_tools() and
+# call_tool() when nothing more specific is configured. Documented in the
+# CLI's --call-timeout help text.
+_DEFAULT_CALL_TIMEOUT = 30.0
 
 
 @dataclass
@@ -46,15 +52,40 @@ class Target:
 
     Construct via :func:`open_stdio_target` (or a future
     ``open_http_target``); don't instantiate directly outside of that.
+
+    Every protocol call is bounded by ``call_timeout`` seconds via
+    :func:`asyncio.wait_for`. On timeout, :class:`asyncio.TimeoutError`
+    propagates to the caller (typically an attack module, which catches
+    broadly and records the failure).
     """
 
-    def __init__(self, session: ClientSession) -> None:
+    def __init__(
+        self,
+        session: ClientSession,
+        *,
+        call_timeout: float = _DEFAULT_CALL_TIMEOUT,
+    ) -> None:
         self._session = session
+        self._call_timeout = call_timeout
+        # Cached on the first successful list_tools() call. Stays put for
+        # the lifetime of this Target — typically one scan run. Several
+        # attacks plus the agent each call list_tools() independently;
+        # caching collapses those N stdio round-trips into 1.
+        #
+        # MCP has tools/list_changed notifications; the SDK handles them
+        # for long-lived sessions. For our scan-then-tear-down lifecycle
+        # the cache won't go stale in practice.
+        self._cached_tools: list[ToolInfo] | None = None
 
     async def list_tools(self) -> list[ToolInfo]:
-        """Enumerate the tools the target advertises."""
-        result = await self._session.list_tools()
-        return [
+        """Enumerate the tools the target advertises (cached after first call)."""
+        if self._cached_tools is not None:
+            return self._cached_tools
+
+        result = await asyncio.wait_for(
+            self._session.list_tools(), timeout=self._call_timeout
+        )
+        self._cached_tools = [
             ToolInfo(
                 name=tool.name,
                 # MCP allows `description` to be null in the spec; coerce.
@@ -64,17 +95,22 @@ class Target:
             )
             for tool in result.tools
         ]
+        return self._cached_tools
 
     async def call_tool(
         self, name: str, arguments: dict[str, Any]
     ) -> CallToolResult:
         """Invoke a tool by name with the given arguments.
 
-        Returns the raw MCP ``CallToolResult`` so attacks can inspect the
-        content blocks themselves. We don't normalize the response shape
-        here because different attacks care about different parts of it.
+        Bounded by ``call_timeout``. Returns the raw MCP ``CallToolResult``
+        so attacks can inspect the content blocks themselves. We don't
+        normalize the response shape here because different attacks care
+        about different parts of it.
         """
-        return await self._session.call_tool(name, arguments)
+        return await asyncio.wait_for(
+            self._session.call_tool(name, arguments),
+            timeout=self._call_timeout,
+        )
 
 
 @asynccontextmanager
@@ -82,11 +118,14 @@ async def open_stdio_target(
     command: str,
     args: list[str],
     env: dict[str, str] | None = None,
+    *,
+    call_timeout: float = _DEFAULT_CALL_TIMEOUT,
 ) -> AsyncIterator[Target]:
     """Open a :class:`Target` backed by an MCP server launched over stdio.
 
     The subprocess is started on enter and torn down on exit; the yielded
     Target is usable for the duration of the ``async with`` block.
+    ``call_timeout`` applies to every protocol call made via the Target.
     """
     async with open_stdio_session(command=command, args=args, env=env) as session:
-        yield Target(session)
+        yield Target(session, call_timeout=call_timeout)

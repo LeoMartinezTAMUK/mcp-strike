@@ -11,10 +11,10 @@ import pytest
 
 from mcp_strike.attacks.base import AttackResult, BaseAttack, Stage, Verdict
 from mcp_strike.attacks.registry import (
-    _REGISTRY,
     get_all_attacks,
     get_attack,
     register_attack,
+    unregister_for_testing,
 )
 from mcp_strike.target import Target
 
@@ -36,7 +36,7 @@ def test_register_and_lookup() -> None:
         assert get_attack("test_registry_dummy_a") is _DummyAttackA
     finally:
         # Don't leak the dummy into other tests.
-        _REGISTRY.pop("test_registry_dummy_a", None)
+        unregister_for_testing("test_registry_dummy_a")
 
 
 def test_duplicate_name_rejected() -> None:
@@ -61,7 +61,7 @@ def test_duplicate_name_rejected() -> None:
                 async def execute(self, target: Target) -> list[AttackResult]:
                     return []
     finally:
-        _REGISTRY.pop("test_registry_dup", None)
+        unregister_for_testing("test_registry_dup")
 
 
 def test_empty_name_rejected() -> None:

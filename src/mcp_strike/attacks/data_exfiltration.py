@@ -16,7 +16,13 @@ from __future__ import annotations
 
 import re
 
-from mcp_strike.attacks._helpers import benign_args, is_error_result, response_text
+from mcp_strike.attacks._helpers import (
+    EVIDENCE_EXCERPT_CHARS,
+    EVIDENCE_SHORT_EXCERPT_CHARS,
+    benign_args,
+    is_error_result,
+    response_text,
+)
 from mcp_strike.attacks.base import (
     AttackResult,
     BaseAttack,
@@ -104,7 +110,10 @@ class DataExfiltrationProbe(BaseAttack):
                     "Tool returned an error response to benign input; "
                     "cannot probe normal behavior."
                 ),
-                evidence={"args_tried": args, "error_excerpt": text[:200]},
+                evidence={
+                    "args_tried": args,
+                    "error_excerpt": text[:EVIDENCE_SHORT_EXCERPT_CHARS],
+                },
             )
 
         hits = [
@@ -124,7 +133,7 @@ class DataExfiltrationProbe(BaseAttack):
                 evidence={
                     "matched_patterns": hits,
                     "args_used": args,
-                    "response_excerpt": text[:500],
+                    "response_excerpt": text[:EVIDENCE_EXCERPT_CHARS],
                 },
             )
 
@@ -134,5 +143,8 @@ class DataExfiltrationProbe(BaseAttack):
             target_tool=tool.name,
             verdict=Verdict.FAILURE,
             rationale="No exfiltration patterns matched.",
-            evidence={"args_used": args, "response_excerpt": text[:200]},
+            evidence={
+                "args_used": args,
+                "response_excerpt": text[:EVIDENCE_SHORT_EXCERPT_CHARS],
+            },
         )

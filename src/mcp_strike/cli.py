@@ -38,6 +38,8 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from mcp_strike import __version__
+from mcp_strike.agent import ATTACK_NAME as AGENT_ATTACK_NAME
 from mcp_strike.agent import AdaptiveAgent
 from mcp_strike.attacks import AttackResult, BaseAttack, get_all_attacks
 from mcp_strike.config import RunConfig, TargetConfig
@@ -52,6 +54,32 @@ app = typer.Typer(
     help="Active, runtime adversarial testing for MCP servers you own.",
     no_args_is_help=True,
 )
+
+
+def _version_callback(value: bool) -> None:
+    """Eager callback for ``--version``: print version, then exit cleanly.
+
+    ``is_eager=True`` on the option (below) means this fires before any
+    subcommand routing — so ``mcp-strike --version`` works even when no
+    subcommand follows.
+    """
+    if value:
+        typer.echo(f"mcp-strike {__version__}")
+        raise typer.Exit()
+
+
+@app.callback()
+def _main_callback(
+    version: bool = typer.Option(
+        False,
+        "--version",
+        "-V",
+        callback=_version_callback,
+        is_eager=True,
+        help="Show version and exit.",
+    ),
+) -> None:
+    """Top-level app callback — only the global flags live here."""
 
 # Kept as module-level text so it's easy to copy-paste into docs and trivial
 # to update without editing function bodies.
@@ -87,26 +115,48 @@ def _print_notice(console: Console) -> None:
 
 
 def _select_attacks(filter_names: list[str] | None) -> list[type[BaseAttack]]:
-    """Resolve the attack-name filter into actual attack classes.
+    """Resolve the attack-name filter into static attack classes.
 
-    ``None`` or an empty list means "every registered attack". An unknown
-    name raises :class:`typer.BadParameter` so the CLI exits cleanly with
-    code 2 and a formatted error.
+    ``None`` or an empty list means "every registered attack". Unknown
+    static-attack names raise :class:`typer.BadParameter`. The special
+    name ``"adaptive_agent"`` is recognized but skipped here — the agent
+    isn't a registered ``BaseAttack``, it's handled by :func:`_should_run_agent`.
     """
     all_attacks = get_all_attacks()
     if not filter_names:
         return all_attacks
 
     by_name = {cls.name: cls for cls in all_attacks}
+    valid_names = set(by_name) | {AGENT_ATTACK_NAME}
     selected: list[type[BaseAttack]] = []
     for name in filter_names:
-        if name not in by_name:
+        if name not in valid_names:
             raise typer.BadParameter(
                 f"Unknown attack {name!r}. Run `mcp-strike list-attacks` "
-                f"to see available names."
+                f"to see available names "
+                f"(also valid: {AGENT_ATTACK_NAME!r})."
             )
-        selected.append(by_name[name])
+        # Agent name is valid but doesn't contribute a static attack class.
+        if name in by_name:
+            selected.append(by_name[name])
     return selected
+
+
+def _should_run_agent(
+    *, agent: AdaptiveAgent | None, filter_names: list[str] | None
+) -> bool:
+    """Decide whether the agent should run for this scan.
+
+    Returns False when the agent wasn't built (no key / --no-agent) OR when
+    ``--only`` was set without including ``"adaptive_agent"``. The latter
+    makes the filter strict: ``--only description_prompt_injection`` runs
+    only that static attack and nothing else, including no agent.
+    """
+    if agent is None:
+        return False
+    if not filter_names:
+        return True  # no filter = run everything
+    return AGENT_ATTACK_NAME in filter_names
 
 
 def _resolve_auto_flag(flag: bool | None) -> bool:
@@ -184,13 +234,13 @@ async def _scan_async(
         command=target_cfg.command,
         args=target_cfg.args,
         env=target_cfg.env,
+        call_timeout=target_cfg.call_timeout,
     ) as target:
         all_results: list[AttackResult] = []
 
         # 1. Static attacks.
         for cls in selected:
             attack = cls()
-            attack.prepare()
             results = await attack.execute(target)
             all_results.extend(results)
 
@@ -201,8 +251,14 @@ async def _scan_async(
         )
 
         # 3. Adaptive agent (optional).
+        #
+        # We skip the agent in two cases:
+        #   - It wasn't built (no key, or --no-agent).
+        #   - ``--only`` was set without including "adaptive_agent" — the
+        #     user explicitly narrowed to a subset that doesn't include us.
         agent_calls_used = 0
-        if agent is not None:
+        if _should_run_agent(agent=agent, filter_names=run_cfg.attacks):
+            assert agent is not None  # narrowed by _should_run_agent
             tools = await target.list_tools()
             agent_results = await agent.attack_all_tools(tools, target)
             all_results.extend(agent_results)
@@ -234,13 +290,14 @@ def _run_scan(
     agent = _build_agent(
         enabled=agent_enabled,
         model=run_cfg.agent_model,
-        max_rounds=run_cfg.agent_max_rounds,
+        max_rounds=run_cfg.agent_max_rounds,  # CLI's --agent-max-rounds lands here
         max_calls=run_cfg.max_agent_calls,
     )
 
-    # If _build_agent fell back to None (no key), reflect that in the
-    # "did the agent run" reporting so the JSON shows null, not 0.
-    agent_actually_ran = agent is not None
+    # If _build_agent fell back to None (no key), OR if --only filtered the
+    # agent out, reflect that in the "did the agent run" reporting so the
+    # JSON shows null, not 0.
+    agent_actually_ran = _should_run_agent(agent=agent, filter_names=run_cfg.attacks)
 
     # Notice: terminal-mode only, when not suppressed.
     if not json_output and not output_file and run_cfg.show_responsible_use_notice:
@@ -290,6 +347,15 @@ def scan(
         "--only",
         help="Run only attacks with these names (repeatable).",
     ),
+    call_timeout: float = typer.Option(
+        30.0,
+        "--call-timeout",
+        help=(
+            "Per-tool-call timeout in seconds (default 30). Applies to "
+            "every MCP protocol call; a malicious or hung server can't "
+            "block the scan beyond this."
+        ),
+    ),
     show_all: bool = typer.Option(
         False, "--show-all", help="Include FAILURE rows in the terminal report."
     ),
@@ -329,6 +395,14 @@ def scan(
         "--agent-model",
         help="Override the default agent model (gpt-4o-mini).",
     ),
+    agent_max_rounds: int = typer.Option(
+        3,
+        "--agent-max-rounds",
+        help=(
+            "Per-tool round cap for the agent (default 3). Each round is "
+            "~1 LLM call, plus a final verdict call after the rounds."
+        ),
+    ),
     max_agent_calls: int = typer.Option(
         50,
         "--max-agent-calls",
@@ -346,7 +420,7 @@ def scan(
     ),
 ) -> None:
     """Connect to an MCP server over stdio and run all attacks against it."""
-    target_cfg = TargetConfig(command=command, args=arg)
+    target_cfg = TargetConfig(command=command, args=arg, call_timeout=call_timeout)
     run_cfg = RunConfig(
         # `or None` so an empty list (typer's default) is treated as
         # "run everything" by the config model.
@@ -357,6 +431,7 @@ def scan(
         max_llm_calls=max_llm_calls,
         agent_enabled=agent,
         agent_model=agent_model,
+        agent_max_rounds=agent_max_rounds,
         max_agent_calls=max_agent_calls,
     )
     _run_scan(
@@ -386,6 +461,11 @@ def demo(
     only: list[str] = typer.Option(
         [], "--only", help="Run only attacks with these names (repeatable)."
     ),
+    call_timeout: float = typer.Option(
+        30.0,
+        "--call-timeout",
+        help="Per-tool-call timeout in seconds (default 30).",
+    ),
     show_all: bool = typer.Option(
         False, "--show-all", help="Include FAILURE rows in the terminal report."
     ),
@@ -425,6 +505,14 @@ def demo(
         "--agent-model",
         help="Override the default agent model (gpt-4o-mini).",
     ),
+    agent_max_rounds: int = typer.Option(
+        3,
+        "--agent-max-rounds",
+        help=(
+            "Per-tool round cap for the agent (default 3). Each round is "
+            "~1 LLM call, plus a final verdict call after the rounds."
+        ),
+    ),
     max_agent_calls: int = typer.Option(
         50,
         "--max-agent-calls",
@@ -443,7 +531,9 @@ def demo(
 ) -> None:
     """Run all attacks against the bundled deliberately-vulnerable demo server."""
     target_cfg = TargetConfig(
-        command=sys.executable, args=["-m", "demo_server"]
+        command=sys.executable,
+        args=["-m", "mcp_strike.demo_server"],
+        call_timeout=call_timeout,
     )
     run_cfg = RunConfig(
         attacks=only or None,
@@ -453,6 +543,7 @@ def demo(
         max_llm_calls=max_llm_calls,
         agent_enabled=agent,
         agent_model=agent_model,
+        agent_max_rounds=agent_max_rounds,
         max_agent_calls=max_agent_calls,
     )
     _run_scan(

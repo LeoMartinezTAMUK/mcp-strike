@@ -16,7 +16,14 @@ UNCERTAIN cases.
 
 from __future__ import annotations
 
-from mcp_strike.attacks._helpers import benign_args, is_error_result, response_text
+from mcp_strike.attacks._helpers import (
+    EVIDENCE_EXCERPT_CHARS,
+    EVIDENCE_SHORT_EXCERPT_CHARS,
+    INJECTION_MARKERS,
+    benign_args,
+    is_error_result,
+    response_text,
+)
 from mcp_strike.attacks.base import (
     AttackResult,
     BaseAttack,
@@ -25,24 +32,6 @@ from mcp_strike.attacks.base import (
 )
 from mcp_strike.attacks.registry import register_attack
 from mcp_strike.target import Target, ToolInfo
-
-# Same canonical markers as `description_prompt_injection`. The patterns
-# are pipeline-stage-agnostic — an injection in metadata and an injection
-# in response text look the same.
-_INJECTION_MARKERS: tuple[str, ...] = (
-    "ignore previous instructions",
-    "ignore all previous instructions",
-    "ignore the above",
-    "disregard previous",
-    "you are now",
-    "you must",
-    "as an ai",
-    "system:",
-    "<|im_start|>",
-    "</system>",
-    "do not mention",
-    "do not tell the user",
-)
 
 
 @register_attack
@@ -99,10 +88,13 @@ class ResponseInjectionProbe(BaseAttack):
                     "Tool returned an error response to benign input; "
                     "cannot probe normal behavior."
                 ),
-                evidence={"args_tried": args, "error_excerpt": text[:200]},
+                evidence={
+                    "args_tried": args,
+                    "error_excerpt": text[:EVIDENCE_SHORT_EXCERPT_CHARS],
+                },
             )
 
-        hits = [m for m in _INJECTION_MARKERS if m in text.lower()]
+        hits = [m for m in INJECTION_MARKERS if m in text.lower()]
 
         if hits:
             return AttackResult(
@@ -118,8 +110,7 @@ class ResponseInjectionProbe(BaseAttack):
                 evidence={
                     "matched_markers": hits,
                     "args_used": args,
-                    # Cap excerpt length so reports stay readable.
-                    "response_excerpt": text[:500],
+                    "response_excerpt": text[:EVIDENCE_EXCERPT_CHARS],
                 },
             )
 
@@ -129,5 +120,8 @@ class ResponseInjectionProbe(BaseAttack):
             target_tool=tool.name,
             verdict=Verdict.FAILURE,
             rationale="No injection markers in response.",
-            evidence={"args_used": args, "response_excerpt": text[:200]},
+            evidence={
+                "args_used": args,
+                "response_excerpt": text[:EVIDENCE_SHORT_EXCERPT_CHARS],
+            },
         )

@@ -12,6 +12,7 @@ Phase 2 LLM-as-judge will improve recall.
 
 from __future__ import annotations
 
+from mcp_strike.attacks._helpers import INJECTION_MARKERS
 from mcp_strike.attacks.base import (
     AttackResult,
     BaseAttack,
@@ -20,25 +21,6 @@ from mcp_strike.attacks.base import (
 )
 from mcp_strike.attacks.registry import register_attack
 from mcp_strike.target import Target
-
-# Substrings characteristic of prompt-injection payloads. Lowercased and
-# matched case-insensitively. Curated rather than exhaustive: a small list
-# of high-confidence markers keeps the false-positive rate low. Add new
-# markers here as we encounter real-world variations.
-_INJECTION_MARKERS: tuple[str, ...] = (
-    "ignore previous instructions",
-    "ignore all previous instructions",
-    "ignore the above",
-    "disregard previous",
-    "you are now",
-    "you must",
-    "as an ai",
-    "system:",
-    "<|im_start|>",
-    "</system>",
-    "do not mention",
-    "do not tell the user",
-)
 
 
 @register_attack
@@ -53,7 +35,7 @@ class DescriptionPromptInjection(BaseAttack):
         for tool in await target.list_tools():
             # Lowercase once per tool, not per marker.
             haystack = tool.description.lower()
-            hits = [m for m in _INJECTION_MARKERS if m in haystack]
+            hits = [m for m in INJECTION_MARKERS if m in haystack]
 
             if hits:
                 results.append(

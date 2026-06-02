@@ -13,7 +13,7 @@ from mcp_strike.target import open_stdio_target
 async def _run_against_demo_async() -> list[AttackResult]:
     async with open_stdio_target(
         command=sys.executable,
-        args=["-m", "demo_server"],
+        args=["-m", "mcp_strike.demo_server"],
     ) as target:
         return await OverreachingParameters().execute(target)
 

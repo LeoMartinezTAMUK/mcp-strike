@@ -30,13 +30,19 @@ class TargetConfig(BaseModel):
     # The executable to launch (e.g. ``"python"``). Required.
     command: str
 
-    # Arguments passed to ``command`` (e.g. ``["-m", "demo_server"]``).
+    # Arguments passed to ``command`` (e.g. ``["-m", "mcp_strike.demo_server"]``).
     args: list[str] = Field(default_factory=list)
 
     # Optional environment for the subprocess. ``None`` means "let the MCP
     # SDK provide a minimal default environment" — that's the right default
     # for testing the demo server.
     env: dict[str, str] | None = None
+
+    # Per-tool-call timeout in seconds. Applies to both list_tools() and
+    # call_tool(). A buggy or malicious MCP server can otherwise hang the
+    # scan indefinitely. 30s is generous for any sane tool; lower it via
+    # ``--call-timeout`` on the CLI if you want to fail faster.
+    call_timeout: float = 30.0
 
 
 class RunConfig(BaseModel):

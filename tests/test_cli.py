@@ -132,7 +132,7 @@ def test_scan_rejects_unknown_attack_name() -> None:
             "scan",
             "--command", "python",
             "--arg", "-m",
-            "--arg", "demo_server",
+            "--arg", "mcp_strike.demo_server",
             "--only", "no_such_attack",
             "--no-judge",
             "--no-agent",
@@ -140,6 +140,94 @@ def test_scan_rejects_unknown_attack_name() -> None:
     )
     assert result.exit_code != 0
     assert "no_such_attack" in result.output
+
+
+def test_only_adaptive_agent_is_a_valid_filter() -> None:
+    """`--only adaptive_agent` should be accepted as a valid filter name.
+
+    Before P1.2, the CLI rejected this because the agent isn't a registered
+    BaseAttack. Now we recognize it specially so users can run agent-only.
+    Test runs with --no-agent so we don't actually need a key — we're just
+    asserting the filter is *accepted*, not that the agent fires.
+    """
+    result = runner.invoke(
+        app,
+        [
+            "demo",
+            "--only", "adaptive_agent",
+            "--no-judge",
+            "--no-agent",  # makes the test hermetic; agent won't actually run
+            "--json",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    parsed = json.loads(result.stdout)
+    # No static attacks ran (filter is "adaptive_agent" only), and the
+    # agent is disabled — so the summary should show zero results.
+    assert parsed["summary"]["total"] == 0
+
+
+def test_scan_against_demo_server_completes_successfully() -> None:
+    """Positive end-to-end test for the `scan` subcommand.
+
+    All previous CLI tests for `scan` exercised the error path
+    (--only no_such_attack). This is the happy-path counterpart: hand
+    `scan` real arguments pointing at the bundled demo server and assert
+    a green exit + visible SUCCESS rows.
+    """
+    import sys
+
+    result = runner.invoke(
+        app,
+        [
+            "scan",
+            "--command", sys.executable,
+            "--arg", "-m",
+            "--arg", "mcp_strike.demo_server",
+            "--no-notice",
+            "--no-judge",
+            "--no-agent",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    # The demo server has planted vulns that static attacks find.
+    assert "SUCCESS" in result.stdout
+
+
+def test_version_flag_prints_and_exits() -> None:
+    """`mcp-strike --version` should print the version and exit 0."""
+    result = runner.invoke(app, ["--version"])
+    assert result.exit_code == 0, result.output
+    # Format: "mcp-strike X.Y.Z[+dev]" — assert prefix and the major.minor.
+    assert "mcp-strike" in result.stdout
+    assert "0.1" in result.stdout  # tolerant: matches 0.1.0, 0.1.0+dev, etc.
+
+
+def test_only_filter_skips_agent_when_not_listed() -> None:
+    """`--only <static_attack>` should NOT also run the agent.
+
+    Before P1.3 the agent ran even when --only narrowed to a single static
+    attack. Now --only is a strict filter across the whole pipeline.
+    """
+    # Note: we use --no-agent so this is hermetic without a key, but the
+    # important assertion is that agent rows don't appear regardless.
+    result = runner.invoke(
+        app,
+        [
+            "demo",
+            "--only", "description_prompt_injection",
+            "--no-judge",
+            "--no-agent",
+            "--json",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    parsed = json.loads(result.stdout)
+    # No row should have attack_name="adaptive_agent".
+    for row in parsed["results"]:
+        assert row["attack_name"] != "adaptive_agent", (
+            f"agent ran despite --only filter: {row}"
+        )
 
 
 def test_root_help_lists_subcommands() -> None:

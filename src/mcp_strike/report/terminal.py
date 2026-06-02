@@ -87,7 +87,10 @@ def render_terminal(
     table.add_column("Stage", no_wrap=True)
     table.add_column("Attack", no_wrap=True)
     table.add_column("Tool", no_wrap=True)
-    table.add_column("Rationale")
+    # Cap the rationale column width so long agent-generated rationales
+    # (often 200+ chars) don't push the table wider than the terminal.
+    # ``overflow="fold"`` wraps the text within the cell.
+    table.add_column("Rationale", max_width=80, overflow="fold")
 
     for r in visible_sorted:
         colour, label, _ = _VERDICT_STYLE[r.verdict]

@@ -38,6 +38,13 @@ class Verdict(str, Enum):
     UNCERTAIN = "uncertain"      # Heuristic couldn't decide; flag for review.
 
 
+# Maximum length of the ``rationale`` string in a :class:`JudgeAnnotation`
+# produced by an LLM (judge or agent). Caps prompt-blowback into terminal
+# reports and JSON output. Both ``OpenAIJudge`` and ``AdaptiveAgent``
+# truncate to this length when constructing the annotation.
+LLM_RATIONALE_MAX_CHARS = 500
+
+
 @dataclass
 class JudgeAnnotation:
     """An LLM judge's opinion on an AttackResult.
@@ -89,24 +96,18 @@ class BaseAttack(abc.ABC):
     Subclasses set ``name`` and ``stage`` as class attributes and implement
     :meth:`execute`. Register the subclass via
     :func:`mcp_strike.attacks.registry.register_attack` so the CLI can find it.
+
+    Note: PLAN.md §6 originally also listed a ``prepare()`` hook on the
+    interface. We dropped it in Phase 4 polish — every concrete attack we
+    have either does its setup at module import time or doesn't need any.
+    If a future attack needs target-independent setup, add the hook back
+    rather than abusing ``__init__`` for it.
     """
 
     #: Short, unique identifier. Used in reports and as a CLI filter.
     name: str = ""
     #: Pipeline stage this attack targets.
     stage: Stage = Stage.METADATA
-
-    # `prepare` is deliberately a concrete no-op, not abstract — subclasses
-    # only need to override it when they have setup that doesn't depend on
-    # the target. Ruff's B027 ("empty method on ABC") fires here because it
-    # can't know that, so we suppress it with intent stated in the docstring.
-    def prepare(self) -> None:  # noqa: B027
-        """Optional setup hook that doesn't need the target.
-
-        Default: no-op. Override when an attack needs to compile payloads or
-        load fixtures before reaching the target. Listed in docs/PLAN.md §6
-        as part of the attack interface.
-        """
 
     @abc.abstractmethod
     async def execute(self, target: Target) -> list[AttackResult]:

@@ -41,15 +41,28 @@ class _FakeResponse:
 
 
 class _FakeCompletions:
-    """Returns canned responses from a queue, one per ``.create()`` call."""
+    """Returns canned responses from a queue, one per ``.create()`` call.
 
-    def __init__(self, responses: list[str]) -> None:
+    Pass ``raise_always`` to simulate a permanently-broken API — every
+    call raises the supplied exception, mimicking a network/upstream
+    failure.
+    """
+
+    def __init__(
+        self,
+        responses: list[str],
+        *,
+        raise_always: Exception | None = None,
+    ) -> None:
         # Reverse so we can pop from the back cheaply.
         self._queue = list(reversed(responses))
+        self._raise_always = raise_always
         self.calls: list[dict[str, Any]] = []
 
     async def create(self, **kwargs: Any) -> _FakeResponse:
         self.calls.append(kwargs)
+        if self._raise_always is not None:
+            raise self._raise_always
         if not self._queue:
             # Tests should always queue enough responses; if not, fail loudly.
             raise RuntimeError("fake openai ran out of queued responses")
@@ -60,8 +73,15 @@ class _FakeCompletions:
 class _FakeOpenAI:
     """Drop-in stand-in for ``openai.AsyncOpenAI``."""
 
-    def __init__(self, responses: list[str]) -> None:
-        self._completions = _FakeCompletions(responses)
+    def __init__(
+        self,
+        responses: list[str] | None = None,
+        *,
+        raise_always: Exception | None = None,
+    ) -> None:
+        self._completions = _FakeCompletions(
+            responses or [], raise_always=raise_always
+        )
         self.chat = type("_Chat", (), {"completions": self._completions})()
 
     @property
@@ -229,6 +249,32 @@ def test_from_env_raises_without_api_key(monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     with pytest.raises(OSError, match="OPENAI_API_KEY"):
         AdaptiveAgent.from_env()
+
+
+def test_handles_api_error_during_tool_attack() -> None:
+    """If every LLM call raises, the agent finalizes to UNCERTAIN cleanly.
+
+    The contract: ``_call_llm`` swallows any exception from the SDK and
+    returns ``{}`` without consuming budget. Each round in the loop sees
+    an empty dict, takes the "bad shape" branch, and records a placeholder
+    history entry. The final verdict call also raises → empty dict →
+    UNCERTAIN. ``calls_made`` stays at 0 because no successful API call
+    happened. Symmetric to the judge's ``test_handles_api_error``.
+    """
+    fake = _FakeOpenAI(raise_always=RuntimeError("upstream is down"))
+    agent = AdaptiveAgent(client=fake, model="test-model", max_rounds=2, max_calls=10)
+
+    result = asyncio.run(agent.attack_one_tool(_tool(), _target_returning("ok")))
+
+    # Verdict falls back to UNCERTAIN since no LLM ever resolved one.
+    assert result.verdict == Verdict.UNCERTAIN
+    # No successful calls → no budget consumed.
+    assert agent.calls_made == 0
+    # Both rounds got recorded as bad-shape errors (parsed dict was empty
+    # so `arguments` wasn't a dict).
+    assert len(result.evidence["history"]) == 2
+    for entry in result.evidence["history"]:
+        assert entry["is_error"] is True
 
 
 # --- real-API integration test, gated by env --------------------------------

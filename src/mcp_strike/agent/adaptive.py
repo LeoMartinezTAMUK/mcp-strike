@@ -1,5 +1,10 @@
 """Adaptive LLM-driven attacker.
 
+Note: this module does NOT subclass :class:`BaseAttack`. The agent's
+interface is meaningfully different (multi-round per tool, separate call
+budget, optional in the pipeline), so it has its own class and is wired
+into the scan pipeline directly by :mod:`mcp_strike.cli`.
+
 For each tool exposed by the target, an LLM loops:
 
   1. See the tool surface + the accumulated probe history.
@@ -22,26 +27,43 @@ errors, malformed responses, and tool-call failures all flow into
 from __future__ import annotations
 
 import json
+import logging
 import os
 from dataclasses import dataclass
 from typing import Any, Protocol
 
 from mcp_strike.attacks import AttackResult, Stage, Verdict
-from mcp_strike.attacks._helpers import is_error_result, response_text
+from mcp_strike.attacks._helpers import (
+    EVIDENCE_EXCERPT_CHARS,
+    is_error_result,
+    response_text,
+)
+from mcp_strike.attacks.base import LLM_RATIONALE_MAX_CHARS
 from mcp_strike.target import Target, ToolInfo
+
+# Module-level logger. Quiet by default (Python's root is WARNING). Users
+# who want to debug LLM-response parsing failures can flip its level:
+#
+#     import logging
+#     logging.getLogger("mcp_strike.agent.adaptive").setLevel(logging.DEBUG)
+#     logging.basicConfig()
+#
+# Documented here so the only behavior change at default level is "nothing
+# new prints" — production users aren't affected.
+_logger = logging.getLogger(__name__)
 
 # Defaults (also documented in CLI help text + README).
 _DEFAULT_MODEL = "gpt-4o-mini"
 _DEFAULT_MAX_ROUNDS = 3
 _DEFAULT_MAX_CALLS = 50
 
+# Hard timeout on each OpenAI call. Without this, a slow API could block the
+# scan indefinitely. Matches the judge's timeout for consistency.
+_REQUEST_TIMEOUT_SECONDS = 30.0
+
 # The attack_name carried by every AttackResult the agent emits. Single
 # constant so the CLI's --only filter can target it.
 ATTACK_NAME = "adaptive_agent"
-
-# Caps for evidence payloads so reports stay readable.
-_RESPONSE_EXCERPT_CHARS = 500
-_RATIONALE_MAX_CHARS = 500
 
 
 class _AsyncOpenAILike(Protocol):
@@ -285,18 +307,31 @@ class AdaptiveAgent:
                     {"role": "user", "content": user_prompt},
                 ],
                 temperature=0.2,
+                # Hard wall-clock cap. The OpenAI SDK accepts this keyword.
+                timeout=_REQUEST_TIMEOUT_SECONDS,
             )
         except Exception:
-            # Network / upstream error. Don't count toward budget.
+            # Network / upstream error / timeout. Don't count toward budget.
             return {}
 
         if consume_budget:
             self._calls_made += 1
 
+        # Default to "" so the debug log below has something safe to slice
+        # even if the AttributeError fires before we got the content out.
+        content = ""
         try:
             content = response.choices[0].message.content or "{}"
             return json.loads(content)
-        except (KeyError, IndexError, AttributeError, json.JSONDecodeError):
+        except (KeyError, IndexError, AttributeError, json.JSONDecodeError) as exc:
+            # Visible only when the logger is set to DEBUG. Helps diagnose
+            # "agent silently UNCERTAIN" issues without polluting normal runs.
+            _logger.debug(
+                "adaptive agent could not parse LLM response: %s; "
+                "first 200 chars of content: %r",
+                exc,
+                content[:200],
+            )
             return {}
 
 
@@ -325,7 +360,7 @@ async def _execute_probe(
     return _ProbeOutcome(
         arguments=arguments,
         hypothesis=hypothesis,
-        response_excerpt=response_text(call_result)[:_RESPONSE_EXCERPT_CHARS],
+        response_excerpt=response_text(call_result)[:EVIDENCE_EXCERPT_CHARS],
         is_error=is_error_result(call_result),
     )
 
@@ -356,7 +391,7 @@ def _result_from_verdict(
         verdict = Verdict.UNCERTAIN
 
     rationale = str(parsed.get("rationale", "")) or "(no rationale provided)"
-    rationale = rationale[:_RATIONALE_MAX_CHARS]
+    rationale = rationale[:LLM_RATIONALE_MAX_CHARS]
     stage = _parse_stage(parsed.get("stage"))
 
     return AttackResult(

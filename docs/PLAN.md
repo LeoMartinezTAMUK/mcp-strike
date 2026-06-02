@@ -63,7 +63,7 @@ Component-based, each piece independently testable:
 - **`report/`** — Renderers: terminal (`rich`), JSON, HTML (stretch).
 - **`config/`** — `pydantic` models for target config + run settings; keys from env only.
 - **`cli.py`** — `typer` app. Commands: `scan`, `list-attacks`, `demo` (spins up the vulnerable server and attacks it), `report`.
-- **`demo_server/`** — A small, intentionally-vulnerable MCP server used for development, tests, and user onboarding.
+- **`mcp_strike/demo_server/`** — A small, intentionally-vulnerable MCP server used for development, tests, and user onboarding. Bundled inside the installable package so `mcp-strike demo` works out of the box after `pip install`.
 
 ## 7. Attack Taxonomy for v1
 
@@ -113,8 +113,8 @@ mcp-strike/
 │   ├── agent/
 │   ├── report/
 │   ├── config/
+│   ├── demo_server/    # bundled in the wheel; runs the vulnerable demo
 │   └── cli.py
-├── demo_server/
 ├── tests/
 ├── docs/
 │   └── PLAN.md          # this file

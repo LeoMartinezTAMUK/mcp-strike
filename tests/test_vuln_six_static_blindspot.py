@@ -27,7 +27,7 @@ async def _run_all_static_attacks_async() -> dict[str, list]:
     """Run every static attack against the demo, return results keyed by attack name."""
     async with open_stdio_target(
         command=sys.executable,
-        args=["-m", "demo_server"],
+        args=["-m", "mcp_strike.demo_server"],
     ) as target:
         return {
             "description_prompt_injection": await DescriptionPromptInjection().execute(target),

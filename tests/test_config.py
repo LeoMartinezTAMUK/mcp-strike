@@ -15,17 +15,21 @@ def test_target_config_minimal() -> None:
     assert cfg.command == "python"
     assert cfg.args == []
     assert cfg.env is None
+    # Per-call timeout has a sane default.
+    assert cfg.call_timeout == 30.0
 
 
 def test_target_config_full() -> None:
     cfg = TargetConfig(
         transport="stdio",
         command="python",
-        args=["-m", "demo_server"],
+        args=["-m", "mcp_strike.demo_server"],
         env={"FOO": "bar"},
+        call_timeout=5.0,
     )
-    assert cfg.args == ["-m", "demo_server"]
+    assert cfg.args == ["-m", "mcp_strike.demo_server"]
     assert cfg.env == {"FOO": "bar"}
+    assert cfg.call_timeout == 5.0
 
 
 def test_target_config_rejects_unknown_transport() -> None:

@@ -6,9 +6,8 @@ Project context for Claude Code. **Read this fully at the start of every session
 An open-source Python CLI that does **active, runtime adversarial testing** of MCP servers the user owns. Full plan: **`docs/PLAN.md`** — always defer to it for scope and architecture.
 
 ## CURRENT PHASE
-**Phases 0–2: COMPLETE.** Next up: **Phase 3 — Adaptive agent + richer reporting** (not started; do not begin without explicit go-ahead).
-Build ONLY what the current phase requires. Do **not** implement the adaptive agent or features beyond Phase 3's scope until the phase that introduces them (see PLAN.md §10). If I ask for something from a later phase, stop and confirm with me first.
-> Update this line as each phase completes (Phase 3, Phase 4, …).
+**Phases 0–4: COMPLETE.** Next up: **Phase 5 — Launch** (not started; do not begin without explicit go-ahead). Phase 5 is mostly your actions — actually publish to PyPI, tag v0.1.0, write the launch post, post to communities. Do **not** implement features beyond Phase 5's scope until the phase that introduces them (see PLAN.md §10).
+> Update this line as each phase completes (Phase 5, …).
 
 ## Build discipline
 - One phase at a time, in order.

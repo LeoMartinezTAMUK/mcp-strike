@@ -15,22 +15,30 @@ so the scan pipeline can keep going.
 from __future__ import annotations
 
 import json
+import logging
 import os
 from typing import Any, Protocol
 
 from mcp_strike.attacks import AttackResult, JudgeAnnotation, Verdict
+from mcp_strike.attacks.base import LLM_RATIONALE_MAX_CHARS
 from mcp_strike.judge.base import BaseJudge
+
+# Module-level logger. Quiet by default. Flip to DEBUG to surface the raw
+# content of LLM responses that failed to parse — useful for diagnosing
+# silent UNCERTAIN verdicts without polluting normal runs.
+_logger = logging.getLogger(__name__)
 
 # The default judge model — cheap, fast, sufficient for yes/no judging.
 # Documented in README + .env.example; override via env or CLI.
 _DEFAULT_MODEL = "gpt-4o-mini"
 
-# Cap on rationale length pulled from the model response. Stops a misbehaving
-# model from blowing out terminal-report column widths.
-_MAX_RATIONALE_CHARS = 500
+# Hard timeout on each OpenAI call. Without this, a slow API could block the
+# scan indefinitely. 30s is generous for gpt-4o-mini at our prompt sizes;
+# real calls usually return in under 5s.
+_REQUEST_TIMEOUT_SECONDS = 30.0
 
-# Cap on the evidence dict we ship to the model. The judge doesn't need the
-# whole dump for yes/no work; this keeps prompt size predictable.
+# Cap on the evidence dict we ship to the model. Specific to LLM prompt
+# size — the judge doesn't need the whole dump for yes/no work.
 _MAX_EVIDENCE_CHARS = 2000
 
 
@@ -103,6 +111,8 @@ class OpenAIJudge(BaseJudge):
                 ],
                 # Low temperature: judge work should be near-deterministic.
                 temperature=0.0,
+                # Hard wall-clock cap. The OpenAI SDK accepts this keyword.
+                timeout=_REQUEST_TIMEOUT_SECONDS,
             )
         except Exception as exc:
             # API errors, network blips, etc. Don't take down the scan;
@@ -125,10 +135,17 @@ class OpenAIJudge(BaseJudge):
         could in principle change or be empty. We catch broadly and fall
         back to UNCERTAIN with a diagnostic.
         """
+        content = ""  # safe default so the debug log below can slice it
         try:
             content = response.choices[0].message.content or "{}"
             parsed = json.loads(content)
         except (KeyError, IndexError, AttributeError, json.JSONDecodeError) as exc:
+            _logger.debug(
+                "judge could not parse LLM response: %s; "
+                "first 200 chars of content: %r",
+                exc,
+                content[:200],
+            )
             return JudgeAnnotation(
                 verdict=Verdict.UNCERTAIN,
                 rationale=f"could not parse judge response: {exc}",
@@ -154,7 +171,7 @@ class OpenAIJudge(BaseJudge):
 
         return JudgeAnnotation(
             verdict=verdict,
-            rationale=rationale[:_MAX_RATIONALE_CHARS],
+            rationale=rationale[:LLM_RATIONALE_MAX_CHARS],
             model=self._model,
             ran=True,
         )

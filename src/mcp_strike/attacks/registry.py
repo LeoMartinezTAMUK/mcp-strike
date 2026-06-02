@@ -53,3 +53,18 @@ def get_all_attacks() -> list[type[BaseAttack]]:
 def get_attack(name: str) -> type[BaseAttack]:
     """Look up an attack class by name. Raises KeyError if unknown."""
     return _REGISTRY[name]
+
+
+def unregister_for_testing(name: str) -> type[BaseAttack] | None:
+    """Remove a registered attack class. **Test-only API.**
+
+    The registry is global module-level state. Tests that register dummy
+    attack subclasses via :func:`register_attack` should call this in their
+    ``finally`` block to keep cross-test state hygienic. Production code
+    should never call this — attack registration is meant to be permanent
+    for the life of the process.
+
+    Returns the previously-registered class, or ``None`` if no entry
+    existed under that name.
+    """
+    return _REGISTRY.pop(name, None)
