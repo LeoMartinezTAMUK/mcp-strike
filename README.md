@@ -73,7 +73,7 @@ The **adaptive agent** is the differentiator: given the tool surface, an LLM pro
 
 ## Configure the LLM features (optional)
 
-Both features are off by default; they auto-enable as soon as `OPENAI_API_KEY` is available, either as a shell export or in a `.env` file at the repo root.
+The judge and agent are off by default; they auto-enable as soon as `OPENAI_API_KEY` is available, either as a shell export or in a `.env` file at the repo root.
 
 ```bash
 # Option A: shell export
@@ -85,18 +85,45 @@ echo 'OPENAI_API_KEY=sk-...' > .env
 mcp-strike demo            # judge + agent both run
 ```
 
-Useful flags:
+A precedence note: a shell-exported variable always wins over `.env`. If you want `.env` to take precedence, `unset` the shell var first.
+
+## All CLI flags
+
+Run `mcp-strike --help`, `mcp-strike scan --help`, or `mcp-strike demo --help` for the full per-command listing. The most commonly used flags:
+
+**Global**
 
 | Flag | Effect |
 |---|---|
-| `--no-judge` / `--no-agent` | Force the corresponding feature off, even with a key set |
-| `--judge` / `--agent` | Force on (errors gracefully if no key) |
-| `--judge-model gpt-4o` | Override the default judge model (gpt-4o-mini) |
-| `--agent-model gpt-4o` | Override the default agent model (gpt-4o-mini) |
-| `--max-llm-calls 20` | Cap on real judge LLM calls per run |
-| `--max-agent-calls 50` | Cap on real agent LLM calls per run |
+| `--version` / `-V` | Print the installed version and exit. |
 
-A precedence note: a shell-exported variable always wins over `.env`. If you want `.env` to take precedence, `unset` the shell var first.
+**Scan shape** (apply to `scan` and `demo`)
+
+| Flag | Effect |
+|---|---|
+| `--only NAME` | Run only the named attack (repeatable). Recognizes the special name `adaptive_agent`. |
+| `--call-timeout SECONDS` | Per-MCP-call timeout (default 30). A buggy or malicious server can't block the scan beyond this. |
+| `--show-all` | Include FAILURE rows in the terminal report (hidden by default). |
+| `--notice` / `--no-notice` | Print the responsible-use notice at startup (default on, terminal mode only). |
+| `--json` | Emit JSON to stdout instead of a terminal table. Suppresses the notice. |
+| `--output-file PATH` | Write the JSON report to a file. Implies `--json`. |
+
+**LLM judge** (Phase 2)
+
+| Flag | Effect |
+|---|---|
+| `--judge` / `--no-judge` | Force the judge on/off. Default: auto — enabled iff `OPENAI_API_KEY` is set. |
+| `--judge-model NAME` | Override the default judge model (`gpt-4o-mini`). |
+| `--max-llm-calls N` | Cap on real judge LLM calls per run (default 20). |
+
+**Adaptive agent** (Phase 3)
+
+| Flag | Effect |
+|---|---|
+| `--agent` / `--no-agent` | Force the agent on/off. Default: auto — enabled iff `OPENAI_API_KEY` is set. |
+| `--agent-model NAME` | Override the default agent model (`gpt-4o-mini`). |
+| `--agent-max-rounds N` | Per-tool round cap for the agent (default 3). |
+| `--max-agent-calls N` | Cap on real agent LLM calls per run (default 50). |
 
 ## Scan your own MCP server
 
@@ -174,16 +201,17 @@ git clone https://github.com/leo/mcp-strike
 cd mcp-strike
 uv sync --extra dev
 
-uv run ruff check .
-uv run pytest -v
-uv run mcp-strike demo
+uv run ruff check .                # lint
+uv run mypy src/mcp_strike         # type-check
+uv run pytest -v --cov             # tests + coverage report
+uv run mcp-strike demo             # eyeball the scan output
 ```
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for project conventions, how to add a new attack, and how to plug in a different LLM provider.
 
 ## Status & roadmap
 
-Currently **0.1.0 / alpha**. Phases 0–3 (foundation → core engine → judge → adaptive agent) are complete. See [`docs/PLAN.md`](docs/PLAN.md) for what's next.
+Currently **0.1.0 / alpha**. Phases 0–4 (foundation → core engine → judge → adaptive agent → polish & packaging) are complete. CI gates on `ruff` + `mypy` + `pytest` across Python 3.10–3.13; production source has ~90% line coverage. See [`docs/PLAN.md`](docs/PLAN.md) for what's next.
 
 ## Responsible use
 
