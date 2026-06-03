@@ -7,7 +7,7 @@ Thanks for thinking about contributing. MCP-Strike is small enough that any cont
 Requires Python 3.10+ and [`uv`](https://docs.astral.sh/uv/).
 
 ```bash
-git clone https://github.com/leo/mcp-strike
+git clone https://github.com/LeoMartinezTAMUK/mcp-strike.git
 cd mcp-strike
 uv sync --extra dev
 

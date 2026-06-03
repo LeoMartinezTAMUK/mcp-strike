@@ -1,8 +1,8 @@
 """Target adapter — the normalized 'server under test' surface.
 
 Attack modules consume :class:`Target` and don't need to know whether the
-underlying transport is stdio or HTTP. Phase 1 wires up stdio only; HTTP
-arrives in a later phase (see docs/PLAN.md §6).
+underlying transport is stdio or HTTP. v0.1 wires up stdio only; HTTP
+arrives in a later release.
 
 Two pieces live here:
 

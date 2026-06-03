@@ -5,7 +5,7 @@ server as a subprocess and yields a fully-initialized `mcp.ClientSession`.
 Higher-level abstractions (Target, attacks) sit on top of this.
 
 This module is a thin wrapper over the official `mcp` Python SDK; we do not
-hand-roll the protocol (see CLAUDE.md).
+hand-roll the protocol.
 """
 
 from __future__ import annotations

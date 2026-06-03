@@ -19,7 +19,7 @@ from mcp_strike.target import Target
 
 
 class Stage(str, Enum):
-    """MCP pipeline stage an attack targets (see docs/PLAN.md §7).
+    """MCP pipeline stage an attack targets.
 
     The value is the short string used in reports; the str-Enum base keeps
     comparisons and serialization cheap.
@@ -97,11 +97,11 @@ class BaseAttack(abc.ABC):
     :meth:`execute`. Register the subclass via
     :func:`mcp_strike.attacks.registry.register_attack` so the CLI can find it.
 
-    Note: PLAN.md §6 originally also listed a ``prepare()`` hook on the
-    interface. We dropped it in Phase 4 polish — every concrete attack we
-    have either does its setup at module import time or doesn't need any.
-    If a future attack needs target-independent setup, add the hook back
-    rather than abusing ``__init__`` for it.
+    Note: an earlier draft of this interface also included a ``prepare()``
+    hook. We dropped it during Phase 4 polish — every concrete attack
+    either does its setup at module import time or doesn't need any. If a
+    future attack needs target-independent setup, add the hook back rather
+    than abusing ``__init__`` for it.
     """
 
     #: Short, unique identifier. Used in reports and as a CLI filter.

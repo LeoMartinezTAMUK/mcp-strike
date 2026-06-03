@@ -5,7 +5,7 @@ the judge over candidates that benefit from a second opinion. This module
 owns that policy: which results are judged, in what order, and how the
 per-run LLM-call cap is enforced.
 
-Layered scoring rationale (from CLAUDE.md / PLAN.md §13):
+Layered scoring rationale:
 - ``FAILURE`` rows are cheap negatives — judging them wastes calls.
 - ``UNCERTAIN`` rows are the prime targets — heuristic couldn't decide.
 - ``SUCCESS`` rows get a confirmation pass — catches heuristic false positives.

@@ -23,8 +23,8 @@ A typical `mcp-strike demo --no-judge --no-agent` run:
 ╭────────────────────── Responsible use ──────────────────────╮
 │ MCP-Strike is a defensive tool for testing MCP servers you  │
 │ own. Running it against systems you don't control may be    │
-│ illegal in your jurisdiction. See docs/PLAN.md §14 for the  │
-│ full note.                                                  │
+│ illegal in your jurisdiction. See the "Responsible use"     │
+│ section of this README for the full note.                   │
 ╰─────────────────────────────────────────────────────────────╯
 
 Scan summary: 29 check(s) ran — 5 SUCCESS, 2 UNCERTAIN, 22 FAILURE
@@ -190,14 +190,14 @@ Exit code is 0 even when findings exist — CI consumers decide what verdict cou
 | `mcp_strike.cli` | `typer` entry point with `scan` / `list-attacks` / `demo` |
 | `mcp_strike.demo_server` | Bundled vulnerable target with 6 planted vulnerabilities |
 
-See [`docs/PLAN.md`](docs/PLAN.md) for the full architecture write-up and roadmap, and [`CLAUDE.md`](CLAUDE.md) for build discipline.
+See [`ROADMAP.md`](ROADMAP.md) for what's shipped and what's next.
 
 ## Development
 
 Requires Python 3.10+ and [`uv`](https://docs.astral.sh/uv/).
 
 ```bash
-git clone https://github.com/leo/mcp-strike
+git clone https://github.com/LeoMartinezTAMUK/mcp-strike.git
 cd mcp-strike
 uv sync --extra dev
 
@@ -211,7 +211,7 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) for project conventions, how to add a n
 
 ## Status & roadmap
 
-Currently **0.1.0 / alpha**. Phases 0–4 (foundation → core engine → judge → adaptive agent → polish & packaging) are complete. CI gates on `ruff` + `mypy` + `pytest` across Python 3.10–3.13; production source has ~90% line coverage. See [`docs/PLAN.md`](docs/PLAN.md) for what's next.
+Currently **0.1.0 / alpha**. Phases 0–4 (foundation → core engine → judge → adaptive agent → polish & packaging) are complete. CI gates on `ruff` + `mypy` + `pytest` across Python 3.10–3.13; production source has ~90% line coverage. See [`ROADMAP.md`](ROADMAP.md) for what's next.
 
 ## Responsible use
 

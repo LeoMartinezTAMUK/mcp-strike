@@ -1,6 +1,6 @@
-"""Scoring / LLM-as-judge (see docs/PLAN.md §6).
+"""Scoring / LLM-as-judge.
 
-Cost discipline rules (from CLAUDE.md):
+Cost discipline rules:
 - Prefer deterministic heuristics first; only run the judge on candidates
   worth a second look (typically UNCERTAIN rows).
 - Default to a cheap model.
@@ -8,8 +8,7 @@ Cost discipline rules (from CLAUDE.md):
 
 This package's :class:`BaseJudge` is the abstract interface;
 :class:`NullJudge` is the no-op used when the judge is disabled.
-:class:`mcp_strike.judge.openai.OpenAIJudge` (Phase 2 S2) is the concrete
-production implementation.
+:class:`OpenAIJudge` is the concrete production implementation.
 """
 
 from mcp_strike.judge.base import BaseJudge

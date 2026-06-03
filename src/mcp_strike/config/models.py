@@ -4,7 +4,7 @@ Phase 1 only needs two: how to connect to a target, and which knobs apply
 to a single scan run. Both are deliberately small — every field that lands
 here is one I can explain in a sentence.
 
-Secrets live in environment variables, never in these models (see CLAUDE.md).
+Secrets live in environment variables, never in these models.
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ class TargetConfig(BaseModel):
     """How to connect to the MCP server under test.
 
     Phase 1 supports only the stdio transport. HTTP/SSE arrive in a later
-    phase (see docs/PLAN.md §6); when they do, ``transport`` will gain
+    phase; when they do, ``transport`` will gain
     additional ``Literal`` options and the relevant fields will become
     optional/conditional.
     """
@@ -59,7 +59,7 @@ class RunConfig(BaseModel):
 
     # The CLI prints a responsible-use notice at startup unless this is
     # ``False``. Defaulting to True keeps the ethics framing in front of
-    # every user (see CLAUDE.md / PLAN.md §14).
+    # every user (see the README's Responsible-use section).
     show_responsible_use_notice: bool = True
 
     # --- Phase 2 (judge) knobs -----------------------------------------------

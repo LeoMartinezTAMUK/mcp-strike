@@ -1,4 +1,4 @@
-"""Configuration models for MCP-Strike (see docs/PLAN.md §6).
+"""Configuration models for MCP-Strike.
 
 Re-exports the public types so callers can write::
 

@@ -11,7 +11,7 @@ description = "Active, runtime adversarial testing for MCP servers — point it 
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
-authors = [{ name = "Leo" }]
+authors = [{ name = "Leo Martinez III" }]
 keywords = [
     "mcp",
     "model-context-protocol",
@@ -38,7 +38,7 @@ classifiers = [
     "Topic :: Software Development :: Testing",
 ]
 
-# Runtime dependencies. All chosen in docs/PLAN.md §8; no new heavy deps added here.
+# Runtime dependencies. Conservative; no new heavy deps without a clear reason.
 dependencies = [
     "mcp>=1.10",      # Official MCP Python SDK (verified on PyPI; maintained by Anthropic).
     "typer>=0.12",    # CLI framework (used in later phases; declared now so the package imports cleanly).
@@ -63,11 +63,10 @@ dev = [
 mcp-strike = "mcp_strike.cli:app"
 
 [project.urls]
-# Update these to your actual GitHub URLs before publishing to PyPI.
-Homepage = "https://github.com/leo/mcp-strike"
-Repository = "https://github.com/leo/mcp-strike"
-Issues = "https://github.com/leo/mcp-strike/issues"
-Documentation = "https://github.com/leo/mcp-strike#readme"
+Homepage = "https://github.com/LeoMartinezTAMUK/mcp-strike"
+Repository = "https://github.com/LeoMartinezTAMUK/mcp-strike"
+Issues = "https://github.com/LeoMartinezTAMUK/mcp-strike/issues"
+Documentation = "https://github.com/LeoMartinezTAMUK/mcp-strike#readme"
 
 # -----------------------------------------------------------------------------
 # Build system

@@ -4,10 +4,10 @@ WARNING: every "vulnerability" in this file is planted on purpose. The server
 exists so MCP-Strike has something to attack during development and tests.
 Do not deploy this to anything that matters.
 
-Six vulnerabilities are planted as of Phase 3. VULN #1–#5 cover the three
-pipeline stages from docs/PLAN.md §7 and are catchable by the static
+Six vulnerabilities are planted. VULN #1–#5 cover the three MCP pipeline
+stages (metadata, parameters, response) and are catchable by the static
 attack modules. VULN #6 is specifically designed NOT to match any static
-pattern — it's the demo target for the Phase-3 adaptive agent.
+pattern — it's the demo target for the adaptive agent.
 
   1. Prompt-injection-in-tool-description    (Stage 1 — tool metadata)
   2. Unsanitized parameter / path traversal  (Stage 2 — tool parameters)
@@ -44,7 +44,7 @@ def build_server() -> FastMCP:
     # The description below contains hostile instructions aimed at the LLM
     # that's calling this tool ("ignore previous instructions ..."). A
     # well-behaved LLM should not follow them, but many do. This is the
-    # canonical Stage-1 (tool-metadata) attack from docs/PLAN.md §7.
+    # canonical Stage-1 (tool-metadata) attack.
     #
     # Why it's a vuln: the LLM reads the description as part of choosing
     # which tool to call, so injected instructions land directly in its

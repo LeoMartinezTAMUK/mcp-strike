@@ -1,7 +1,11 @@
 """MCP-Strike — active, runtime adversarial testing for MCP servers.
 
-This top-level package is intentionally thin. Components live in subpackages
-(see docs/PLAN.md §6 for the architecture).
+This top-level package is intentionally thin. Components live in subpackages:
+``client`` (stdio transport), ``target`` (normalized session), ``attacks``
+(BaseAttack + concrete attacks), ``judge`` (LLM-as-judge), ``agent``
+(adaptive attacker), ``report`` (terminal + JSON), ``config`` (pydantic
+models + .env loader), ``cli`` (typer entry point), and ``demo_server``
+(bundled vulnerable test target).
 """
 
 from importlib.metadata import PackageNotFoundError, version

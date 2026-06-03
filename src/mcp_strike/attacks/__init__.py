@@ -11,7 +11,9 @@ their module bodies decorate each attack class with ``@register_attack``
 at import time, populating the registry. The order of those imports
 doesn't matter; the registry stores by name.
 
-See docs/PLAN.md §7 for the taxonomy of attacks planned for v1.
+Attacks are organized by MCP pipeline stage: metadata (description /
+schema inspection), parameters (active tool-call probing), and response
+(active probing + response inspection).
 """
 
 from mcp_strike.attacks import (  # noqa: F401  (imported for side effects)

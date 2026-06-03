@@ -26,5 +26,12 @@ venv/
 .DS_Store
 Thumbs.db
 
+# Local-only working documents. CLAUDE.md is the AI-assistant house-rules
+# file (useful for the maintainer's development workflow, not for public
+# consumption). docs/PLAN.md is the maintainer's working plan document
+# with personal context; the public-facing roadmap lives in ROADMAP.md.
+CLAUDE.md
+docs/PLAN.md
+
 # uv lockfile location is up to the project; keep it tracked normally.
 # (uv.lock should be committed for reproducible builds. Don't ignore it.)

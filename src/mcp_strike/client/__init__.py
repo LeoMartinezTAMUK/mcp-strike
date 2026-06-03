@@ -2,7 +2,7 @@
 
 Thin wrapper over the official `mcp` Python SDK. This package owns
 transport-specific session setup. The higher-level normalized API lives in
-``mcp_strike.target`` (see docs/PLAN.md §6).
+``mcp_strike.target``.
 """
 
 from mcp_strike.client.stdio import open_stdio_session

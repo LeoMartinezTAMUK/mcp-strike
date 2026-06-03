@@ -86,7 +86,7 @@ def _main_callback(
 _NOTICE_TEXT = (
     "MCP-Strike is a defensive tool for testing MCP servers you own.\n"
     "Running it against systems you don't control may be illegal in your\n"
-    "jurisdiction. See README + docs/PLAN.md §14 for the full note."
+    "jurisdiction. See the README's Responsible-use section for details."
 )
 
 
