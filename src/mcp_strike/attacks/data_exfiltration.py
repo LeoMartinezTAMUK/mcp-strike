@@ -1,15 +1,16 @@
 """Stage-3 attack: data-exfiltration patterns in tool responses.
 
 Active attack. Invokes each tool with benign input and scans the response
-for sinks the response is trying to coax the calling LLM into — POST-to-URL
+for sinks the response is trying to coax the calling LLM into: POST-to-URL
 instructions, "send credentials to X" phrasings, suspicious domains.
 
 Distinct from response-injection: injection wants the *LLM* to do something
 arbitrary; exfiltration wants it to *send data out*. The patterns overlap
 sometimes but the verdicts should be reported independently.
 
-Phase 2 ships the heuristic only — pattern hit → ``SUCCESS``, no hit →
-``FAILURE``, call rejected → ``UNCERTAIN``. The judge resolves UNCERTAIN.
+Verdict mapping: a pattern hit yields ``SUCCESS``, no hit yields
+``FAILURE``, a rejected call yields ``UNCERTAIN``. The judge layer
+resolves UNCERTAIN.
 """
 
 from __future__ import annotations
@@ -33,7 +34,7 @@ from mcp_strike.attacks.registry import register_attack
 from mcp_strike.target import Target, ToolInfo
 
 # Exfiltration patterns. Each is (label, regex). Compiled once at module
-# load. Curated for high precision — false positives are worse than false
+# load. Curated for high precision: false positives are worse than false
 # negatives here because the judge will resolve the latter.
 #
 # Patterns:
@@ -85,7 +86,7 @@ class DataExfiltrationProbe(BaseAttack):
         try:
             call_result = await target.call_tool(tool.name, args)
         except Exception as exc:
-            # Transport / protocol error (rare). Treat as UNCERTAIN.
+            # Transport or protocol error (rare). Treat as UNCERTAIN.
             return AttackResult(
                 attack_name=self.name,
                 stage=self.stage,
@@ -99,7 +100,7 @@ class DataExfiltrationProbe(BaseAttack):
 
         # See response_injection.py for the full rationale: MCP wraps tool
         # exceptions as in-band errors, so we have to check `isError`
-        # explicitly. Error responses → UNCERTAIN.
+        # explicitly. Error responses are treated as UNCERTAIN.
         if is_error_result(call_result):
             return AttackResult(
                 attack_name=self.name,

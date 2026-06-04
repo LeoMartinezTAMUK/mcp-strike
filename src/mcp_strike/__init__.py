@@ -1,4 +1,4 @@
-"""MCP-Strike — active, runtime adversarial testing for MCP servers.
+"""MCP-Strike: active, runtime adversarial testing for MCP servers.
 
 This top-level package is intentionally thin. Components live in subpackages:
 ``client`` (stdio transport), ``target`` (normalized session), ``attacks``

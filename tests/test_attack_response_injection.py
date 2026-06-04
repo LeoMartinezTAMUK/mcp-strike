@@ -27,7 +27,7 @@ def test_response_injection_against_demo() -> None:
     results = _run_against_demo()
     by_tool = {r.target_tool: r for r in results}
 
-    # Planted vuln fires — get_news returns the injection payload.
+    # Planted vuln fires: get_news returns the injection payload.
     assert by_tool["get_news"].verdict == Verdict.SUCCESS
     matched = by_tool["get_news"].evidence["matched_markers"]
     assert any("ignore" in m for m in matched)
@@ -45,7 +45,7 @@ def test_uncertain_when_tool_returns_in_band_error() -> None:
 
     MCP wraps the FileNotFoundError as an in-band CallToolResult with
     ``isError=True``, not a transport exception. The probe should notice
-    that and emit UNCERTAIN — it never observed the tool's normal
+    that and emit UNCERTAIN; it never observed the tool's normal
     behavior, so claiming FAILURE would be a false negative.
     """
     results = _run_against_demo()

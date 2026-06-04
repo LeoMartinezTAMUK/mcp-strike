@@ -3,22 +3,22 @@
 Entry point: the ``mcp-strike`` console script (defined in pyproject.toml's
 ``[project.scripts]``) calls :data:`app`. Three subcommands are exposed:
 
-- ``scan``         — connect to a target and run all attacks against it.
-- ``list-attacks`` — show every registered attack (name, stage, class).
-- ``demo``         — convenience: run a scan against the bundled
-                     deliberately-vulnerable demo server.
+- ``scan``: connect to a target and run all attacks against it.
+- ``list-attacks``: show every registered attack (name, stage, class).
+- ``demo``: convenience wrapper that runs a scan against the bundled
+  deliberately-vulnerable demo server.
 
 The responsible-use notice prints at startup of ``scan`` and ``demo`` in
 terminal mode unless suppressed with ``--no-notice``. JSON mode auto-
 suppresses the notice (it's for human eyes, not for machines).
 
-Judge defaults (Phase 2 — see PLAN.md §10):
+Judge defaults:
 - ``--judge`` / ``--no-judge`` is tri-state: omit to auto-detect
   (enabled iff ``OPENAI_API_KEY`` is set), or pass either form to override.
 - Default model is gpt-4o-mini; override with ``--judge-model``.
 - ``--max-llm-calls`` caps real LLM calls per run (default 20).
 
-Adaptive agent defaults (Phase 3):
+Adaptive agent defaults:
 - Same tri-state pattern via ``--agent`` / ``--no-agent``.
 - Default model gpt-4o-mini; override with ``--agent-model``.
 - ``--max-agent-calls`` caps real LLM calls per run (default 50). Separate
@@ -60,7 +60,7 @@ def _version_callback(value: bool) -> None:
     """Eager callback for ``--version``: print version, then exit cleanly.
 
     ``is_eager=True`` on the option (below) means this fires before any
-    subcommand routing — so ``mcp-strike --version`` works even when no
+    subcommand routing, so ``mcp-strike --version`` works even when no
     subcommand follows.
     """
     if value:
@@ -79,7 +79,7 @@ def _main_callback(
         help="Show version and exit.",
     ),
 ) -> None:
-    """Top-level app callback — only the global flags live here."""
+    """Top-level app callback; only the global flags live here."""
 
 # Kept as module-level text so it's easy to copy-paste into docs and trivial
 # to update without editing function bodies.
@@ -119,7 +119,7 @@ def _select_attacks(filter_names: list[str] | None) -> list[type[BaseAttack]]:
 
     ``None`` or an empty list means "every registered attack". Unknown
     static-attack names raise :class:`typer.BadParameter`. The special
-    name ``"adaptive_agent"`` is recognized but skipped here — the agent
+    name ``"adaptive_agent"`` is recognized but skipped here; the agent
     isn't a registered ``BaseAttack``, it's handled by :func:`_should_run_agent`.
     """
     all_attacks = get_all_attacks()
@@ -147,10 +147,10 @@ def _should_run_agent(
 ) -> bool:
     """Decide whether the agent should run for this scan.
 
-    Returns False when the agent wasn't built (no key / --no-agent) OR when
-    ``--only`` was set without including ``"adaptive_agent"``. The latter
-    makes the filter strict: ``--only description_prompt_injection`` runs
-    only that static attack and nothing else, including no agent.
+    Returns False when the agent wasn't built (no key, or --no-agent), or
+    when ``--only`` was set without including ``"adaptive_agent"``. The
+    latter makes the filter strict: ``--only description_prompt_injection``
+    runs only that static attack and nothing else, including no agent.
     """
     if agent is None:
         return False
@@ -184,7 +184,7 @@ def _build_judge(*, enabled: bool, model: str | None) -> BaseJudge:
     except OSError as exc:
         # Key missing or invalid env. Warn to stderr so JSON-on-stdout
         # consumers still get clean JSON; fall back so the scan continues.
-        typer.echo(f"warning: judge disabled — {exc}", err=True)
+        typer.echo(f"warning: judge disabled: {exc}", err=True)
         return NullJudge()
 
 
@@ -198,7 +198,7 @@ def _build_agent(
     """Construct the adaptive agent if enabled. Returns ``None`` when off.
 
     Unlike the judge (which has a NullJudge no-op) we use ``None`` here
-    because the agent isn't always present in the pipeline — call sites
+    because the agent isn't always present in the pipeline; call sites
     just branch on ``if agent is not None``. Less code than a NullAgent.
     """
     if not enabled:
@@ -208,7 +208,7 @@ def _build_agent(
             model=model, max_rounds=max_rounds, max_calls=max_calls
         )
     except OSError as exc:
-        typer.echo(f"warning: agent disabled — {exc}", err=True)
+        typer.echo(f"warning: agent disabled: {exc}", err=True)
         return None
 
 
@@ -221,10 +221,10 @@ async def _scan_async(
     """Connect, run attacks + judge + (optional) agent. Returns (results, metadata).
 
     Pipeline order:
-      1. Static attacks → ``all_results``.
+      1. Static attacks populate ``all_results``.
       2. Judge pass over ``all_results`` (only the static-attack rows exist
-         here; the agent's findings are not double-judged — the agent
-         already uses an LLM with reasoning).
+         here; the agent's findings are not double-judged because the
+         agent already uses an LLM with reasoning).
       3. Adaptive agent runs over the tool surface, appends its
          AttackResults to ``all_results``.
     """
@@ -244,7 +244,7 @@ async def _scan_async(
             results = await attack.execute(target)
             all_results.extend(results)
 
-        # 2. Judge pass — only over static-attack rows; agent results
+        # 2. Judge pass: only over static-attack rows; agent results
         # haven't been generated yet.
         llm_calls_used = await annotate_with_judge(
             all_results, judge, max_calls=run_cfg.max_llm_calls
@@ -254,8 +254,8 @@ async def _scan_async(
         #
         # We skip the agent in two cases:
         #   - It wasn't built (no key, or --no-agent).
-        #   - ``--only`` was set without including "adaptive_agent" — the
-        #     user explicitly narrowed to a subset that doesn't include us.
+        #   - ``--only`` was set without including "adaptive_agent", meaning
+        #     the user explicitly narrowed to a subset that doesn't include us.
         agent_calls_used = 0
         if _should_run_agent(agent=agent, filter_names=run_cfg.attacks):
             assert agent is not None  # narrowed by _should_run_agent
@@ -280,7 +280,7 @@ def _run_scan(
 ) -> None:
     """Shared back end for ``scan`` and ``demo``: scan, judge, agent, render."""
     # Auto-load .env from cwd before resolving any auth-dependent config.
-    # Shell-exported vars still take precedence — purely additive.
+    # Shell-exported vars still take precedence; this is purely additive.
     load_dotenv(Path.cwd() / ".env")
 
     judge_enabled = _resolve_auto_flag(run_cfg.judge_enabled)
@@ -321,7 +321,7 @@ def _run_scan(
             with open(output_file, "w", encoding="utf-8") as f:
                 f.write(text)
         else:
-            # typer.echo, not Console.print — avoid Rich post-processing on JSON.
+            # typer.echo, not Console.print: avoid Rich post-processing on JSON.
             typer.echo(text)
         return
 
@@ -368,7 +368,7 @@ def scan(
         None,
         "--judge/--no-judge",
         help=(
-            "Run the LLM judge after static attacks. Default: auto — "
+            "Run the LLM judge after static attacks. Default: auto, "
             "enabled iff OPENAI_API_KEY is set."
         ),
     ),
@@ -387,7 +387,7 @@ def scan(
         "--agent/--no-agent",
         help=(
             "Run the adaptive LLM agent after static attacks. Default: "
-            "auto — enabled iff OPENAI_API_KEY is set."
+            "auto, enabled iff OPENAI_API_KEY is set."
         ),
     ),
     agent_model: str = typer.Option(
@@ -478,7 +478,7 @@ def demo(
         None,
         "--judge/--no-judge",
         help=(
-            "Run the LLM judge after static attacks. Default: auto — "
+            "Run the LLM judge after static attacks. Default: auto, "
             "enabled iff OPENAI_API_KEY is set."
         ),
     ),
@@ -497,7 +497,7 @@ def demo(
         "--agent/--no-agent",
         help=(
             "Run the adaptive LLM agent after static attacks. Default: "
-            "auto — enabled iff OPENAI_API_KEY is set."
+            "auto, enabled iff OPENAI_API_KEY is set."
         ),
     ),
     agent_model: str = typer.Option(

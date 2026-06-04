@@ -1,12 +1,12 @@
 """Terminal report renderer.
 
 Renders a list of :class:`mcp_strike.attacks.AttackResult` to a Rich
-Console. Default: only ``SUCCESS`` and ``UNCERTAIN`` rows are shown — the
+Console. Default: only ``SUCCESS`` and ``UNCERTAIN`` rows are shown; the
 noisy ``FAILURE`` rows can be re-enabled with ``show_all=True`` for
 debugging or coverage inspection.
 
-Future sibling functions in this package will render the same data as JSON
-(Phase 2) and HTML (stretch).
+A sibling :func:`mcp_strike.report.json_report.render_json` produces a
+machine-readable view of the same data for CI use.
 """
 
 from __future__ import annotations
@@ -17,9 +17,9 @@ from rich.text import Text
 
 from mcp_strike.attacks import AttackResult, Verdict
 
-# Verdict → (rich-markup colour, label, sort_priority).
-# Sort priority puts SUCCESS at the top, UNCERTAIN below, FAILURE last —
-# matches "alarming stuff first" reading order.
+# Verdict maps to (rich-markup colour, label, sort_priority).
+# Sort priority puts SUCCESS at the top, UNCERTAIN below, FAILURE last,
+# which matches "alarming stuff first" reading order.
 _VERDICT_STYLE: dict[Verdict, tuple[str, str, int]] = {
     Verdict.SUCCESS: ("red", "SUCCESS", 0),
     Verdict.UNCERTAIN: ("yellow", "UNCERTAIN", 1),
@@ -45,7 +45,7 @@ def render_terminal(
     if console is None:
         console = Console()
 
-    # Summary line — always derived from the FULL result set so the user
+    # Summary line: always derived from the FULL result set so the user
     # sees how many checks ran even when ``show_all`` is False.
     n_total = len(results)
     n_success = sum(1 for r in results if r.verdict == Verdict.SUCCESS)
@@ -53,7 +53,7 @@ def render_terminal(
     n_failure = n_total - n_success - n_uncertain
 
     console.print(
-        f"[bold]Scan summary[/bold]: {n_total} check(s) ran — "
+        f"[bold]Scan summary[/bold]: {n_total} check(s) ran. "
         f"[red]{n_success} SUCCESS[/red], "
         f"[yellow]{n_uncertain} UNCERTAIN[/yellow], "
         f"[dim]{n_failure} FAILURE[/dim]"

@@ -1,8 +1,8 @@
 """Stdio transport for the MCP client layer.
 
-Phase 1 role: expose a single async context manager that launches an MCP
-server as a subprocess and yields a fully-initialized `mcp.ClientSession`.
-Higher-level abstractions (Target, attacks) sit on top of this.
+Exposes a single async context manager that launches an MCP server as a
+subprocess and yields a fully-initialized `mcp.ClientSession`. Higher-level
+abstractions (Target, attacks) sit on top of this.
 
 This module is a thin wrapper over the official `mcp` Python SDK; we do not
 hand-roll the protocol.

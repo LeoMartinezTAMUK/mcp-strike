@@ -1,6 +1,6 @@
 # MCP-Strike
 
-**Active, runtime adversarial testing for MCP servers — point it at your own server and find out what breaks.**
+**Active, runtime adversarial testing for MCP servers: point it at your own server and find out what breaks.**
 
 Most existing MCP scanners read tool descriptions and configs *statically*. MCP-Strike connects to a live [Model Context Protocol](https://modelcontextprotocol.io) server, runs a battery of real attacks against the actual tool surface, observes what comes back, and (optionally) uses an LLM-as-judge plus an LLM-driven adaptive agent to score each finding.
 
@@ -13,7 +13,7 @@ pip install mcp-strike      # or: uvx mcp-strike demo
 mcp-strike demo
 ```
 
-That's it — `demo` spins up a bundled deliberately-vulnerable MCP server, scans it, and prints a colorized report. No keys required (the LLM features auto-enable only if you set `OPENAI_API_KEY`).
+That's it. `demo` spins up a bundled deliberately-vulnerable MCP server, scans it, and prints a colorized report. No keys required (the LLM features auto-enable only if you set `OPENAI_API_KEY`).
 
 ## What you get
 
@@ -27,7 +27,7 @@ A typical `mcp-strike demo --no-judge --no-agent` run:
 │ section of this README for the full note.                   │
 ╰─────────────────────────────────────────────────────────────╯
 
-Scan summary: 29 check(s) ran — 5 SUCCESS, 2 UNCERTAIN, 22 FAILURE
+Scan summary: 29 check(s) ran. 5 SUCCESS, 2 UNCERTAIN, 22 FAILURE
 
 ┏━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┳──────────────────────────────────────┓
 ┃ Verdict   ┃ Stage      ┃ Attack                       ┃ Tool            ┃ Rationale                            ┃
@@ -108,19 +108,19 @@ Run `mcp-strike --help`, `mcp-strike scan --help`, or `mcp-strike demo --help` f
 | `--json` | Emit JSON to stdout instead of a terminal table. Suppresses the notice. |
 | `--output-file PATH` | Write the JSON report to a file. Implies `--json`. |
 
-**LLM judge** (Phase 2)
+**LLM judge**
 
 | Flag | Effect |
 |---|---|
-| `--judge` / `--no-judge` | Force the judge on/off. Default: auto — enabled iff `OPENAI_API_KEY` is set. |
+| `--judge` / `--no-judge` | Force the judge on/off. Default: auto, enabled iff `OPENAI_API_KEY` is set. |
 | `--judge-model NAME` | Override the default judge model (`gpt-4o-mini`). |
 | `--max-llm-calls N` | Cap on real judge LLM calls per run (default 20). |
 
-**Adaptive agent** (Phase 3)
+**Adaptive agent**
 
 | Flag | Effect |
 |---|---|
-| `--agent` / `--no-agent` | Force the agent on/off. Default: auto — enabled iff `OPENAI_API_KEY` is set. |
+| `--agent` / `--no-agent` | Force the agent on/off. Default: auto, enabled iff `OPENAI_API_KEY` is set. |
 | `--agent-model NAME` | Override the default agent model (`gpt-4o-mini`). |
 | `--agent-max-rounds N` | Per-tool round cap for the agent (default 3). |
 | `--max-agent-calls N` | Cap on real agent LLM calls per run (default 50). |
@@ -174,17 +174,17 @@ Stable schema, suitable for CI pipelines. Top-level shape:
 }
 ```
 
-Exit code is 0 even when findings exist — CI consumers decide what verdict counts as a build failure.
+Exit code is 0 even when findings exist; CI consumers decide what verdict counts as a build failure.
 
 ## Architecture at a glance
 
 | Module | Role |
 |---|---|
 | `mcp_strike.client` | Stdio transport wrapper over the official `mcp` SDK |
-| `mcp_strike.target` | Normalized `Target` adapter — what attacks consume |
+| `mcp_strike.target` | Normalized `Target` adapter (what attacks consume) |
 | `mcp_strike.attacks` | `BaseAttack` ABC + decorator registry + the 5 concrete attacks |
 | `mcp_strike.judge` | LLM-as-judge layer (NullJudge no-op + OpenAIJudge) |
-| `mcp_strike.agent` | Adaptive LLM-driven attacker (Phase 3) |
+| `mcp_strike.agent` | Adaptive LLM-driven attacker |
 | `mcp_strike.report` | Renderers: terminal (`rich`) + JSON |
 | `mcp_strike.config` | `pydantic` config models + `.env` loader |
 | `mcp_strike.cli` | `typer` entry point with `scan` / `list-attacks` / `demo` |
@@ -211,14 +211,16 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) for project conventions, how to add a n
 
 ## Status & roadmap
 
-Currently **0.1.0 / alpha**. Phases 0–4 (foundation → core engine → judge → adaptive agent → polish & packaging) are complete. CI gates on `ruff` + `mypy` + `pytest` across Python 3.10–3.13; production source has ~90% line coverage. See [`ROADMAP.md`](ROADMAP.md) for what's next.
+Currently **0.1.0 / alpha**. CI gates on `ruff` + `mypy` + `pytest` across Python 3.10 through 3.13; production source has ~90% line coverage. See [`ROADMAP.md`](ROADMAP.md) for what's next.
 
 ## Responsible use
 
 MCP-Strike is a defensive tool for testing MCP servers you own or are explicitly authorized to test. **It is not a weapon for attacking third-party infrastructure.** Running it against systems you don't control may be illegal in your jurisdiction and is not a supported use case. The CLI prints a responsible-use notice at startup; you can suppress it for scripting with `--no-notice` once you've internalized it.
 
-If you find a vulnerability in someone else's server while using this tool, follow responsible disclosure — contact the maintainer privately before publishing details.
+If you find a vulnerability in someone else's server while using this tool, follow responsible disclosure: contact the operator of that server privately before publishing details.
+
+To report a security issue in MCP-Strike itself (not in a third-party server), see [`SECURITY.md`](SECURITY.md).
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE).
+MIT. See [`LICENSE`](LICENSE).

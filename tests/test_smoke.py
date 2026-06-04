@@ -1,10 +1,10 @@
-"""Phase 0/1 smoke test.
+"""Smoke test for the end-to-end discovery path.
 
 Launch the deliberately-vulnerable demo MCP server as a subprocess, connect to
-it via the Phase 1 Target adapter, and verify the planted tool surface is
-discovered with the planted-vuln description intact.
+it via the Target adapter, and verify the planted tool surface is discovered
+with the planted-vuln description intact.
 
-We deliberately don't depend on `pytest-asyncio` — wrapping the async call in
+We deliberately don't depend on `pytest-asyncio`; wrapping the async call in
 `asyncio.run` inside a sync test keeps the test simple and removes one dev dep.
 """
 
@@ -18,7 +18,7 @@ from mcp_strike.target import ToolInfo, open_stdio_target
 
 async def _discover_demo_tools_async() -> list[ToolInfo]:
     # `sys.executable` is the absolute path to the Python interpreter pytest
-    # itself is running under — no PATH guessing, no virtualenv surprises.
+    # itself is running under; no PATH guessing, no virtualenv surprises.
     async with open_stdio_target(
         command=sys.executable,
         args=["-m", "mcp_strike.demo_server"],
@@ -31,11 +31,11 @@ def _discover_demo_tools() -> list[ToolInfo]:
 
 
 def test_demo_server_exposes_planted_vuln_tools() -> None:
-    """Both Phase-0 planted-vuln tools must be discoverable.
+    """The original planted-vuln tools must be discoverable.
 
-    The demo server may grow more planted tools as Phase 1 attacks land
-    (e.g. `submit_feedback` for the overreaching-parameters attack). We
-    therefore check for presence, not exact equality.
+    The demo server has grown additional planted tools over time (e.g.
+    `submit_feedback` for the overreaching-parameters attack), so we
+    check for presence, not exact equality.
     """
     tools = _discover_demo_tools()
     tool_names = {tool.name for tool in tools}
@@ -48,7 +48,7 @@ def test_prompt_injection_string_lands_in_description() -> None:
     """The Stage-1 planted vuln must round-trip through the protocol.
 
     If the MCP SDK ever changes how it surfaces descriptions, this test will
-    catch it — and it doubles as documentation that the demo tool really is
+    catch it, and it doubles as documentation that the demo tool really is
     carrying the malicious string the description-injection attack scans for.
     """
     tools = _discover_demo_tools()

@@ -27,7 +27,7 @@ def test_exfiltration_against_demo() -> None:
     results = _run_against_demo()
     by_tool = {r.target_tool: r for r in results}
 
-    # Planted vuln fires — the response asks the LLM to POST to an
+    # Planted vuln fires: the response asks the LLM to POST to an
     # attacker-controlled URL.
     assert by_tool["fetch_status"].verdict == Verdict.SUCCESS
     matched = by_tool["fetch_status"].evidence["matched_patterns"]
@@ -37,7 +37,7 @@ def test_exfiltration_against_demo() -> None:
     assert "send-or-post-to-url" in matched
 
     # Benign-response tools shouldn't false-positive.
-    # get_news has injection text but no exfil sink — should NOT fire here.
+    # get_news has injection text but no exfil sink; should NOT fire here.
     assert by_tool["get_weather"].verdict == Verdict.FAILURE
     assert by_tool["submit_feedback"].verdict == Verdict.FAILURE
     assert by_tool["get_news"].verdict == Verdict.FAILURE

@@ -7,7 +7,7 @@ issued; this attack costs nothing and runs in O(tools).
 This is a heuristic, not a judge. False positives are possible (a benign
 description might contain "ignore" in another context); false negatives
 are likely for sophisticated injections that don't use stock phrases. The
-Phase 2 LLM-as-judge will improve recall.
+LLM-as-judge layer can improve recall when enabled.
 """
 
 from __future__ import annotations

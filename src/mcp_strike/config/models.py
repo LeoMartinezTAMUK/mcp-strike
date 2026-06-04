@@ -1,8 +1,8 @@
 """Pydantic configuration models for MCP-Strike.
 
-Phase 1 only needs two: how to connect to a target, and which knobs apply
-to a single scan run. Both are deliberately small — every field that lands
-here is one I can explain in a sentence.
+Two models: how to connect to a target, and which knobs apply to a single
+scan run. Both are deliberately small; every field is one that can be
+explained in a sentence.
 
 Secrets live in environment variables, never in these models.
 """
@@ -17,13 +17,12 @@ from pydantic import BaseModel, Field
 class TargetConfig(BaseModel):
     """How to connect to the MCP server under test.
 
-    Phase 1 supports only the stdio transport. HTTP/SSE arrive in a later
-    phase; when they do, ``transport`` will gain
-    additional ``Literal`` options and the relevant fields will become
-    optional/conditional.
+    Currently supports only the stdio transport. When HTTP/SSE lands,
+    ``transport`` will gain additional ``Literal`` options and the relevant
+    fields will become optional/conditional.
     """
 
-    # Locked to "stdio" for Phase 1. Declared as a Literal so pydantic will
+    # Locked to "stdio" for now. Declared as a Literal so pydantic will
     # reject unknown transports at validation time.
     transport: Literal["stdio"] = "stdio"
 
@@ -34,8 +33,8 @@ class TargetConfig(BaseModel):
     args: list[str] = Field(default_factory=list)
 
     # Optional environment for the subprocess. ``None`` means "let the MCP
-    # SDK provide a minimal default environment" — that's the right default
-    # for testing the demo server.
+    # SDK provide a minimal default environment", which is the right
+    # default for testing the demo server.
     env: dict[str, str] | None = None
 
     # Per-tool-call timeout in seconds. Applies to both list_tools() and
@@ -46,11 +45,7 @@ class TargetConfig(BaseModel):
 
 
 class RunConfig(BaseModel):
-    """Knobs for a single scan run.
-
-    Grows as new phases land. Phase 1 introduced the attack filter and the
-    notice flag; Phase 2 adds the judge knobs.
-    """
+    """Knobs for a single scan run."""
 
     # When ``None``, every registered attack runs. When set, only attacks
     # whose ``name`` appears in this list run. Useful for ``--only=...`` and
@@ -62,7 +57,7 @@ class RunConfig(BaseModel):
     # every user (see the README's Responsible-use section).
     show_responsible_use_notice: bool = True
 
-    # --- Phase 2 (judge) knobs -----------------------------------------------
+    # --- Judge knobs ---------------------------------------------------------
     # ``None`` = auto: judge runs iff OPENAI_API_KEY is set. ``True`` = force
     # on (will hard-fail at runtime if no key). ``False`` = force off. The
     # CLI's --judge/--no-judge flag maps to this tri-state.
@@ -74,7 +69,7 @@ class RunConfig(BaseModel):
     # it. Keeping this small protects against runaway spend on big servers.
     max_llm_calls: int = 20
 
-    # --- Phase 3 (adaptive agent) knobs --------------------------------------
+    # --- Adaptive-agent knobs ------------------------------------------------
     # Tri-state with the same semantics as ``judge_enabled``. Default
     # behavior: auto-enable iff OPENAI_API_KEY is set.
     agent_enabled: bool | None = None
@@ -84,5 +79,5 @@ class RunConfig(BaseModel):
     # calls per tool (3 proposals + 1 final verdict).
     agent_max_rounds: int = 3
     # Per-run cap on agent LLM calls. Separate budget from the judge's
-    # ``max_llm_calls`` — independent features, independent ceilings.
+    # ``max_llm_calls``; independent features, independent ceilings.
     max_agent_calls: int = 50

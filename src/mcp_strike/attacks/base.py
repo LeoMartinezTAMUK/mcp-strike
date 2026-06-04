@@ -5,7 +5,7 @@ class attributes, and implements :meth:`BaseAttack.execute`. It returns one
 :class:`AttackResult` per inspected target component (per tool, typically).
 
 The interface is uniform for passive (metadata-only) and active (tool-calling)
-attacks — both kinds receive a :class:`Target` and produce a list of results.
+attacks: both kinds receive a :class:`Target` and produce a list of results.
 """
 
 from __future__ import annotations
@@ -25,9 +25,9 @@ class Stage(str, Enum):
     comparisons and serialization cheap.
     """
 
-    METADATA = "metadata"        # Stage 1 — tool signature / description
-    PARAMETERS = "parameters"    # Stage 2 — tool invocation / args
-    RESPONSE = "response"        # Stage 3 — tool response handling (Phase 2+)
+    METADATA = "metadata"        # Stage 1: tool signature / description
+    PARAMETERS = "parameters"    # Stage 2: tool invocation / args
+    RESPONSE = "response"        # Stage 3: tool response handling
 
 
 class Verdict(str, Enum):
@@ -81,7 +81,7 @@ class AttackResult:
     target_tool: str             # Name of the tool that was inspected/invoked.
     verdict: Verdict
     rationale: str               # Short human-readable explanation.
-    # Optional structured evidence — e.g. matched substrings, payloads tried.
+    # Optional structured evidence (e.g. matched substrings, payloads tried).
     # Attacks are responsible for keeping this small so reports stay readable.
     evidence: dict[str, Any] = field(default_factory=dict)
     # Optional judge opinion. ``None`` until the scan pipeline runs a judge
@@ -98,10 +98,10 @@ class BaseAttack(abc.ABC):
     :func:`mcp_strike.attacks.registry.register_attack` so the CLI can find it.
 
     Note: an earlier draft of this interface also included a ``prepare()``
-    hook. We dropped it during Phase 4 polish — every concrete attack
-    either does its setup at module import time or doesn't need any. If a
-    future attack needs target-independent setup, add the hook back rather
-    than abusing ``__init__`` for it.
+    hook. It was dropped because every concrete attack either does its
+    setup at module import time or doesn't need any. If a future attack
+    needs target-independent setup, add the hook back rather than abusing
+    ``__init__`` for it.
     """
 
     #: Short, unique identifier. Used in reports and as a CLI filter.
@@ -115,6 +115,6 @@ class BaseAttack(abc.ABC):
 
         Returns ``[]`` when there's nothing to report (e.g. the target has
         no tools the attack applies to). Network/protocol exceptions should
-        be wrapped in an ``UNCERTAIN`` AttackResult rather than raised — a
+        be wrapped in an ``UNCERTAIN`` AttackResult rather than raised: a
         single failed probe shouldn't abort the whole scan.
         """

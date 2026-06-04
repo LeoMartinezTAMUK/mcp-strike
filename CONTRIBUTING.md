@@ -24,8 +24,8 @@ If `mcp-strike demo` prints a scan table, your environment is good.
 - **Python 3.10+**, with type hints on all public functions.
 - **Lint:** `ruff check .` must be clean. Auto-fix with `ruff check --fix .`.
 - **Type-check:** `uv run mypy src/mcp_strike` must be clean. CI gates on this for the 3.10 cell.
-- **Tests:** `pytest -v` must be green before any PR is mergeable. Add tests with new code — see existing patterns in `tests/`.
-- **Coverage:** optional locally, but useful — `uv run pytest --cov` prints the per-file coverage with missing-line ranges. CI tracks but doesn't gate on a floor yet.
+- **Tests:** `pytest -v` must be green before any PR is mergeable. Add tests with new code; see existing patterns in `tests/`.
+- **Coverage:** optional locally, but useful. `uv run pytest --cov` prints the per-file coverage with missing-line ranges. CI tracks but doesn't gate on a floor yet.
 - **Clarity > cleverness.** Every line should be one a new contributor can understand on first read. We avoid dense one-liners and undocumented metaprogramming.
 - **Small, reviewable commits.** Imperative commit messages: "add stdio HTTP transport", not "added stuff".
 
@@ -35,14 +35,14 @@ If `mcp-strike demo` prints a scan table, your environment is good.
 2. Subclass `BaseAttack`, set `name` (unique, lowercase, underscore-separated) and `stage`, and implement `async def execute(target) -> list[AttackResult]`.
 3. Decorate the class with `@register_attack` (imported from `mcp_strike.attacks.registry`).
 4. Add the module to the side-effect import block in `src/mcp_strike/attacks/__init__.py`.
-5. Add a test file `tests/test_attack_<your_attack>.py`. Use the existing tests as templates — they spawn the demo server, run the attack, and assert on findings.
+5. Add a test file `tests/test_attack_<your_attack>.py`. Use the existing tests as templates; they spawn the demo server, run the attack, and assert on findings.
 6. If your attack catches a vulnerability the demo server doesn't already expose, add a planted-vuln tool to `src/mcp_strike/demo_server/server.py` so the test has something to fire on. Comment it as `VULN #N` consistent with the others.
 
 ## How to add a new LLM-backend (judge or agent)
 
 The `judge/` and `agent/` modules currently support OpenAI only. To add Anthropic, Vertex, etc.:
 
-1. For the judge: implement a new class subclassing `BaseJudge` (see `judge/openai_judge.py` for the shape — `from_env`, `async def judge(...)`).
+1. For the judge: implement a new class subclassing `BaseJudge` (see `judge/openai_judge.py` for the shape: `from_env`, `async def judge(...)`).
 2. For the agent: implement `from_env` + `attack_one_tool` / `attack_all_tools` with similar signatures.
 3. Wire model selection through `RunConfig` and the CLI (mirror `--judge-model` / `--agent-model`).
 4. Unit-test with a fake client (see the `_FakeOpenAI` pattern in `tests/test_judge_openai.py`).
@@ -54,7 +54,7 @@ LLM calls cost money. Defaults: cheap model (`gpt-4o-mini`), per-run call caps, 
 
 ## Reporting a security issue
 
-If you find a vulnerability in MCP-Strike itself (not in the demo server, where vulns are planted on purpose), please email the maintainer rather than opening a public issue. Coordinated disclosure preferred.
+If you find a vulnerability in MCP-Strike itself (not in the demo server, where vulns are planted on purpose), please **do not open a public issue**. See [`SECURITY.md`](SECURITY.md) for the private reporting channel (GitHub Private Vulnerability Reporting is preferred) and what to expect after you report.
 
 ## License
 

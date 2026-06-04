@@ -1,6 +1,6 @@
 """Proof that VULN #6 (check_session) is invisible to every static attack.
 
-This test exists to lock in the *premise* of the Phase-3 adaptive agent:
+This test exists to lock in the *premise* of the adaptive agent:
 that there are vulnerability classes static pattern matching can't catch.
 If a future commit accidentally makes one of the static attacks flag
 ``check_session`` as SUCCESS, this test fails and we re-evaluate.
@@ -43,8 +43,8 @@ def test_no_static_attack_flags_check_session_as_success() -> None:
 
     Acceptable outcomes per static attack: FAILURE (probed, no signal),
     UNCERTAIN (couldn't probe), or absent from results entirely (out of
-    scope — e.g. path traversal needs a string parameter and check_session
-    has none). Anything is fine except SUCCESS.
+    scope; for instance, path traversal needs a string parameter and
+    check_session has none). Anything is fine except SUCCESS.
     """
     results_by_attack = asyncio.run(_run_all_static_attacks_async())
 

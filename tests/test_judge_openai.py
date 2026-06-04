@@ -188,7 +188,7 @@ def test_against_real_openai_api() -> None:
     """End-to-end check against the real API. Skipped without a key.
 
     Uses the default cheap model. Asserts only the shape of the response,
-    not specific verdict text — the model's exact wording is non-deterministic
+    not specific verdict text; the model's exact wording is non-deterministic
     even at temperature 0.
     """
     judge = OpenAIJudge.from_env()

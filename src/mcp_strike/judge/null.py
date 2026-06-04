@@ -2,7 +2,7 @@
 
 Returned by the pipeline whenever the judge is disabled (no API key,
 ``--no-judge``, or the per-run call cap was reached). Lets call sites
-stay branchless — they always invoke ``.judge()`` and may receive a
+stay branchless: they always invoke ``.judge()`` and may receive a
 ``ran=False`` annotation, rather than having to handle ``Optional[Judge]``.
 """
 

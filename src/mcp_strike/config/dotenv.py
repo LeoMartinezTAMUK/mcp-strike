@@ -30,8 +30,8 @@ def load_dotenv(path: Path) -> int:
 
     Args:
         path: Filesystem path to a .env file. If the file doesn't exist,
-            the function is a no-op (returns 0) — callers don't need to
-            guard the call.
+            the function is a no-op (returns 0), so callers don't need
+            to guard the call.
 
     Returns:
         The number of keys actually set into the environment (excludes

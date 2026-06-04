@@ -56,7 +56,7 @@ def test_failure_rows_are_skipped() -> None:
 
     assert calls == 0
     assert judge.calls == 0
-    # FAILURE rows keep judge=None — nothing was attached.
+    # FAILURE rows keep judge=None; nothing was attached.
     assert all(r.judge is None for r in results)
 
 

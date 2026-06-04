@@ -33,9 +33,9 @@ def test_target_config_full() -> None:
 
 
 def test_target_config_rejects_unknown_transport() -> None:
-    """Phase 1 only knows stdio; unknown transport must be rejected."""
+    """Only stdio is supported; unknown transport must be rejected."""
     with pytest.raises(ValidationError):
-        # The type: ignore is fine — we're deliberately passing an invalid
+        # The type: ignore is fine; we're deliberately passing an invalid
         # literal to exercise pydantic's validation.
         TargetConfig(transport="grpc", command="python")  # type: ignore[arg-type]
 
@@ -44,11 +44,11 @@ def test_run_config_defaults() -> None:
     cfg = RunConfig()
     assert cfg.attacks is None
     assert cfg.show_responsible_use_notice is True
-    # Phase 2 judge fields default to "auto" / library defaults.
+    # Judge fields default to "auto" / library defaults.
     assert cfg.judge_enabled is None  # None = auto-detect
     assert cfg.judge_model is None
     assert cfg.max_llm_calls == 20
-    # Phase 3 agent fields default to "auto" / library defaults.
+    # Adaptive-agent fields default to "auto" / library defaults.
     assert cfg.agent_enabled is None
     assert cfg.agent_model is None
     assert cfg.agent_max_rounds == 3
@@ -61,7 +61,7 @@ def test_run_config_with_attack_filter() -> None:
 
 
 def test_run_config_judge_fields_round_trip() -> None:
-    """Phase 2 judge fields accept explicit values and round-trip cleanly."""
+    """Judge fields accept explicit values and round-trip cleanly."""
     cfg = RunConfig(
         judge_enabled=True,
         judge_model="gpt-4o",
@@ -73,7 +73,7 @@ def test_run_config_judge_fields_round_trip() -> None:
 
 
 def test_run_config_agent_fields_round_trip() -> None:
-    """Phase 3 agent fields accept explicit values and round-trip cleanly."""
+    """Adaptive-agent fields accept explicit values and round-trip cleanly."""
     cfg = RunConfig(
         agent_enabled=True,
         agent_model="gpt-4o",

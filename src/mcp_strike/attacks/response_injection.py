@@ -1,17 +1,17 @@
 """Stage-3 attack: prompt injection inside tool RESPONSES.
 
-Active attack — the flagship dynamic check from PLAN.md §7. Invokes each
-tool with benign input and scans the response text for substrings
-characteristic of prompt-injection payloads aimed at the *calling* LLM.
-This is the canonical "indirect" or "response-channel" injection.
+Active attack: the flagship dynamic check. Invokes each tool with benign
+input and scans the response text for substrings characteristic of
+prompt-injection payloads aimed at the *calling* LLM. This is the
+canonical "indirect" or "response-channel" injection.
 
 Tools that can't be called with benign input (require types we don't model,
 or that raise on our placeholder input) get an ``UNCERTAIN`` result so the
 LLM judge can investigate when enabled.
 
-Phase 2 ships the heuristic only — markers in the response → ``SUCCESS``,
-none → ``FAILURE``, call rejected → ``UNCERTAIN``. The judge resolves the
-UNCERTAIN cases.
+Verdict mapping: markers in the response yield ``SUCCESS``, no markers
+yield ``FAILURE``, a rejected call yields ``UNCERTAIN``. The judge layer
+can resolve the UNCERTAIN cases.
 """
 
 from __future__ import annotations
@@ -55,13 +55,13 @@ class ResponseInjectionProbe(BaseAttack):
         """Probe a single tool. Returns ``None`` if we can't build benign args."""
         args = benign_args(tool.input_schema)
         if args is None:
-            # Out of scope — schema is too exotic for this attack.
+            # Out of scope: schema is too exotic for this attack.
             return None
 
         try:
             call_result = await target.call_tool(tool.name, args)
         except Exception as exc:
-            # Transport / protocol error (rare). Treat as UNCERTAIN.
+            # Transport or protocol error (rare). Treat as UNCERTAIN.
             return AttackResult(
                 attack_name=self.name,
                 stage=self.stage,
@@ -77,7 +77,7 @@ class ResponseInjectionProbe(BaseAttack):
         # isError=True), so ``try/except`` above doesn't catch them. We
         # explicitly check the flag and treat error responses as UNCERTAIN:
         # we never observed the tool's normal behavior, so we can't claim
-        # FAILURE with confidence — the judge can decide if enabled.
+        # FAILURE with confidence. The judge can decide if enabled.
         if is_error_result(call_result):
             return AttackResult(
                 attack_name=self.name,

@@ -1,13 +1,13 @@
 """Stage-1 attack: overreaching tool parameters.
 
 Passive scan of each tool's input schema. Flags parameter *names* that look
-credential- or PII-ish — the kind of input a benign tool shouldn't ask for.
+credential- or PII-ish: the kind of input a benign tool shouldn't ask for.
 The tool is not invoked; this attack costs nothing and runs in O(parameters).
 
 Like description-injection, this is a heuristic. False positives are
 possible (a legitimate ``auth_method`` enum, say); false negatives are
-likely for cleverly-named credential params ("user_secret_id"). The Phase 2
-LLM-as-judge will improve recall.
+likely for cleverly-named credential params ("user_secret_id"). The
+LLM-as-judge layer can improve recall when enabled.
 """
 
 from __future__ import annotations
@@ -25,8 +25,8 @@ from mcp_strike.target import Target
 
 # Substrings that, when present in a parameter name, suggest the tool is
 # asking for secrets or PII. Compared case-insensitively against the lower
-# form of each parameter name. Keep this list curated and small —
-# broadening it linearly increases false positives.
+# form of each parameter name. Keep this list curated and small: broadening
+# it linearly increases false positives.
 _SUSPICIOUS_PARAM_SUBSTRINGS: tuple[str, ...] = (
     "password",
     "passwd",
@@ -47,7 +47,7 @@ def _suspicious_params(schema: dict[str, Any]) -> list[str]:
     """Return parameter names from ``schema`` that match a suspicious substring.
 
     Expects a JSON Schema object (as produced by FastMCP). We only look at
-    the top-level ``properties`` dict — nested objects are uncommon in MCP
+    the top-level ``properties`` dict: nested objects are uncommon in MCP
     tool schemas and can be added later if real targets need it.
     """
     props = schema.get("properties")

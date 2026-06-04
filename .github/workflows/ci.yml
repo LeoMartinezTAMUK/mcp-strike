@@ -41,7 +41,7 @@ jobs:
 
       - name: Mypy (type check, 3.10 only)
         # Type-checking doesn't vary across Python versions in a way
-        # we'd act on — running once keeps CI fast and the report
+        # we'd act on, so running once keeps CI fast and the report
         # un-duplicated.
         if: matrix.python-version == '3.10'
         run: uv run mypy src/mcp_strike
@@ -59,7 +59,7 @@ jobs:
 
   build-and-install:
     runs-on: ubuntu-latest
-    # Only run after the test matrix passes — no point publishing-test a
+    # Only run after the test matrix passes; no point publishing-test a
     # broken build.
     needs: lint-and-test
     steps:
@@ -78,7 +78,7 @@ jobs:
         # Validates the stranger experience from PLAN.md §10: that after
         # `pip install mcp-strike`, the CLI works including the bundled
         # demo server. The `> /dev/null` on the demo run keeps stdout
-        # short — we just care about exit code 0.
+        # short; we just care about exit code 0.
         run: |
           uv venv /tmp/smoke
           source /tmp/smoke/bin/activate

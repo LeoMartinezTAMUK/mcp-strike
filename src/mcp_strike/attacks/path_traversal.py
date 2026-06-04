@@ -1,9 +1,9 @@
 """Stage-2 attack: path-traversal probe.
 
 Active attack. For each tool that takes a string parameter (its *first*
-string parameter, to keep Phase 1 simple), invoke the tool with traversal
-payloads pointing at well-known host files and inspect the response text
-for filesystem signatures.
+string parameter, to keep the heuristic simple), invoke the tool with
+traversal payloads pointing at well-known host files and inspect the
+response text for filesystem signatures.
 
 Tradeoffs:
 - High precision: signatures are specific enough (``"root:x:0:0:"``) that a
@@ -64,7 +64,7 @@ class PathTraversalProbe(BaseAttack):
         results: list[AttackResult] = []
         for tool in await target.list_tools():
             result = await self._probe_one(tool, target)
-            # Tools with no string parameter are silently skipped — they're
+            # Tools with no string parameter are silently skipped; they're
             # outside this attack's scope, not "uncertain" findings.
             if result is not None:
                 results.append(result)
@@ -114,7 +114,7 @@ class PathTraversalProbe(BaseAttack):
                 )
 
         # No signature-bearing response. If *every* probe raised, we don't
-        # actually know whether the tool is vulnerable — escalate to
+        # actually know whether the tool is vulnerable; escalate to
         # UNCERTAIN so a human can take a look.
         if errored and len(errored) == len(attempted):
             return AttackResult(

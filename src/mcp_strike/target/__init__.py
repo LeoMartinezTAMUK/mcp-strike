@@ -1,4 +1,4 @@
-"""Target adapter — normalized representation of the server under test.
+"""Target adapter: normalized representation of the server under test.
 
 Attack modules consume :class:`Target` so they don't need to care about
 transport details.

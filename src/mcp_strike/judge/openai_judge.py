@@ -1,7 +1,7 @@
 """OpenAI-backed LLM judge.
 
 Uses the official ``openai`` Python SDK and the chat-completions endpoint.
-Defaults to ``gpt-4o-mini`` — cheap and plenty capable for yes/no judge
+Defaults to ``gpt-4o-mini``: cheap and plenty capable for yes/no judge
 work. Override per-instance via the ``model`` arg, per-run via the
 ``MCP_STRIKE_JUDGE_MODEL`` env var, or per-call via the CLI ``--judge-model``
 flag.
@@ -24,11 +24,11 @@ from mcp_strike.attacks.base import LLM_RATIONALE_MAX_CHARS
 from mcp_strike.judge.base import BaseJudge
 
 # Module-level logger. Quiet by default. Flip to DEBUG to surface the raw
-# content of LLM responses that failed to parse — useful for diagnosing
+# content of LLM responses that failed to parse: useful for diagnosing
 # silent UNCERTAIN verdicts without polluting normal runs.
 _logger = logging.getLogger(__name__)
 
-# The default judge model — cheap, fast, sufficient for yes/no judging.
+# The default judge model: cheap, fast, sufficient for yes/no judging.
 # Documented in README + .env.example; override via env or CLI.
 _DEFAULT_MODEL = "gpt-4o-mini"
 
@@ -38,7 +38,7 @@ _DEFAULT_MODEL = "gpt-4o-mini"
 _REQUEST_TIMEOUT_SECONDS = 30.0
 
 # Cap on the evidence dict we ship to the model. Specific to LLM prompt
-# size — the judge doesn't need the whole dump for yes/no work.
+# size; the judge doesn't need the whole dump for yes/no work.
 _MAX_EVIDENCE_CHARS = 2000
 
 
@@ -93,7 +93,7 @@ class OpenAIJudge(BaseJudge):
             or _DEFAULT_MODEL
         )
 
-        # Import the SDK lazily — keeps ``import mcp_strike.judge`` cheap
+        # Import the SDK lazily so ``import mcp_strike.judge`` stays cheap
         # for callers that don't end up using OpenAI.
         from openai import AsyncOpenAI
 
@@ -131,7 +131,7 @@ class OpenAIJudge(BaseJudge):
     ) -> JudgeAnnotation:
         """Extract the JSON body and turn it into a JudgeAnnotation.
 
-        Defensive against malformed responses — the SDK's response shape
+        Defensive against malformed responses; the SDK's response shape
         could in principle change or be empty. We catch broadly and fall
         back to UNCERTAIN with a diagnostic.
         """

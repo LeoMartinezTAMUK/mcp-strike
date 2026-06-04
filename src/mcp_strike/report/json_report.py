@@ -1,9 +1,8 @@
 """JSON report renderer.
 
 Produces a machine-readable representation of scan results for CI/CD use.
-The schema is intended to be stable — additions are non-breaking but
-renames or removals require a major version bump (when there's a version
-to bump).
+The schema is intended to be stable: additions are non-breaking but
+renames or removals require a major version bump.
 
 Schema overview::
 
@@ -15,8 +14,8 @@ Schema overview::
         "failure":          int,
         "llm_calls_used":   int | null,   # null when no judge ran
         "llm_calls_cap":    int | null,   # null when no judge ran
-        "agent_calls_used": int | null,   # null when no agent ran (Phase 3)
-        "agent_calls_cap":  int | null    # null when no agent ran (Phase 3)
+        "agent_calls_used": int | null,   # null when no agent ran
+        "agent_calls_cap":  int | null    # null when no agent ran
       },
       "results": [
         {

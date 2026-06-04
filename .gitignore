@@ -15,7 +15,7 @@ htmlcov/
 .venv/
 venv/
 
-# Secrets — env files are NEVER committed. See .env.example for the template.
+# Secrets: env files are NEVER committed. See .env.example for the template.
 .env
 .env.*
 !.env.example

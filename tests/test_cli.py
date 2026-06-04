@@ -11,7 +11,7 @@ subprocess and exercise the full scan-and-render path end to end. We pass
 features stay off and the tests don't make real API calls.
 
 The single real-API agent test at the bottom of this file is the
-exception — it's gated on ``OPENAI_API_KEY`` and skipped otherwise.
+exception: it's gated on ``OPENAI_API_KEY`` and skipped otherwise.
 """
 
 from __future__ import annotations
@@ -32,11 +32,11 @@ def test_list_attacks_shows_every_registered_attack() -> None:
     """`list-attacks` should mention every attack registered so far."""
     result = runner.invoke(app, ["list-attacks"])
     assert result.exit_code == 0, result.output
-    # Phase 1 attacks.
+    # Metadata-stage and parameters-stage attacks.
     assert "description_prompt_injection" in result.stdout
     assert "overreaching_parameters" in result.stdout
     assert "path_traversal_probe" in result.stdout
-    # Phase 2 attacks.
+    # Response-stage attacks.
     assert "response_injection_probe" in result.stdout
     assert "data_exfiltration_probe" in result.stdout
 
@@ -46,7 +46,7 @@ def test_demo_runs_and_surfaces_planted_vulns() -> None:
 
     --no-notice keeps output tight; --no-judge + --no-agent skip any
     OpenAI calls so the test is hermetic. We don't grep for specific
-    rationales — those may evolve — just for the verdict label and an
+    rationales (those may evolve), just for the verdict label and an
     attack name.
     """
     result = runner.invoke(
@@ -60,7 +60,7 @@ def test_demo_runs_and_surfaces_planted_vulns() -> None:
 def test_demo_json_output_is_valid_json() -> None:
     """`demo --json --no-judge --no-agent` emits parseable JSON to stdout.
 
-    Asserts top-level schema only — we trust the schema tests in
+    Asserts top-level schema only; we trust the schema tests in
     test_report_json.py for finer-grained checks.
     """
     result = runner.invoke(
@@ -147,7 +147,7 @@ def test_only_adaptive_agent_is_a_valid_filter() -> None:
 
     Before P1.2, the CLI rejected this because the agent isn't a registered
     BaseAttack. Now we recognize it specially so users can run agent-only.
-    Test runs with --no-agent so we don't actually need a key — we're just
+    Test runs with --no-agent so we don't actually need a key; we're just
     asserting the filter is *accepted*, not that the agent fires.
     """
     result = runner.invoke(
@@ -163,7 +163,7 @@ def test_only_adaptive_agent_is_a_valid_filter() -> None:
     assert result.exit_code == 0, result.output
     parsed = json.loads(result.stdout)
     # No static attacks ran (filter is "adaptive_agent" only), and the
-    # agent is disabled — so the summary should show zero results.
+    # agent is disabled, so the summary should show zero results.
     assert parsed["summary"]["total"] == 0
 
 
@@ -198,7 +198,7 @@ def test_version_flag_prints_and_exits() -> None:
     """`mcp-strike --version` should print the version and exit 0."""
     result = runner.invoke(app, ["--version"])
     assert result.exit_code == 0, result.output
-    # Format: "mcp-strike X.Y.Z[+dev]" — assert prefix and the major.minor.
+    # Format: "mcp-strike X.Y.Z[+dev]"; assert prefix and the major.minor.
     assert "mcp-strike" in result.stdout
     assert "0.1" in result.stdout  # tolerant: matches 0.1.0, 0.1.0+dev, etc.
 
@@ -252,7 +252,7 @@ def test_root_help_lists_subcommands() -> None:
 def test_demo_with_agent_catches_vuln_six() -> None:
     """End-to-end: the adaptive agent should flag check_session (VULN #6).
 
-    Static attacks all land on FAILURE (or skip) for check_session — that's
+    Static attacks all land on FAILURE (or skip) for check_session; that's
     enforced by ``test_vuln_six_static_blindspot.py``. The agent is the
     only line of defense, and this test confirms it actually catches it.
 
@@ -283,7 +283,7 @@ def test_demo_with_agent_catches_vuln_six() -> None:
         f"got {len(agent_rows_for_check_session)}"
     )
 
-    # The agent should NOT call this clean — it's actively asking for a
+    # The agent should NOT call this clean; it's actively asking for a
     # password. SUCCESS is ideal; UNCERTAIN is acceptable given LLM
     # non-determinism. FAILURE would mean the agent missed it.
     verdict = agent_rows_for_check_session[0]["verdict"]

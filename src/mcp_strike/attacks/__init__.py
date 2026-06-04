@@ -6,7 +6,7 @@ attack class to register itself with the module-level registry (via the
 use :func:`get_all_attacks` to discover what's available.
 
 The imports below are isort-sorted. The submodule imports
-(``description_injection`` et al.) are kept for their *side effect* —
+(``description_injection`` et al.) are kept for their *side effect*:
 their module bodies decorate each attack class with ``@register_attack``
 at import time, populating the registry. The order of those imports
 doesn't matter; the registry stores by name.

@@ -27,7 +27,7 @@ def test_overreaching_params_against_demo() -> None:
     results = _run_against_demo()
     by_tool = {r.target_tool: r for r in results}
 
-    # Planted vuln fires — both credential params flagged.
+    # Planted vuln fires: both credential params flagged.
     assert by_tool["submit_feedback"].verdict == Verdict.SUCCESS
     flagged = by_tool["submit_feedback"].evidence["suspicious_parameters"]
     assert "user_password" in flagged

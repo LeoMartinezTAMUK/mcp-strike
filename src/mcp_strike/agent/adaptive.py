@@ -49,7 +49,7 @@ from mcp_strike.target import Target, ToolInfo
 #     logging.basicConfig()
 #
 # Documented here so the only behavior change at default level is "nothing
-# new prints" — production users aren't affected.
+# new prints"; production users aren't affected.
 _logger = logging.getLogger(__name__)
 
 # Defaults (also documented in CLI help text + README).
@@ -61,8 +61,8 @@ _DEFAULT_MAX_CALLS = 50
 # scan indefinitely. Matches the judge's timeout for consistency.
 _REQUEST_TIMEOUT_SECONDS = 30.0
 
-# The attack_name carried by every AttackResult the agent emits. Single
-# constant so the CLI's --only filter can target it.
+# The attack_name carried by every AttackResult the agent emits. Kept as
+# a single constant so the CLI's --only filter can target it.
 ATTACK_NAME = "adaptive_agent"
 
 
@@ -105,7 +105,7 @@ _SYSTEM_PROMPT = (
     "  B) VERDICT: respond with JSON containing 'verdict' "
     "('success'|'failure'|'uncertain'), 'rationale' (<=300 chars), and "
     "'stage' ('metadata'|'parameters'|'response').\n"
-    "Use exactly one form per response — never both. Respond ONLY with the "
+    "Use exactly one form per response, never both. Respond ONLY with the "
     "JSON."
 )
 
@@ -295,7 +295,7 @@ class AdaptiveAgent:
         """One LLM call. Returns the parsed JSON dict (empty dict on failure).
 
         Updates ``self._calls_made`` only when the call actually went out
-        and we got a response, regardless of whether the body parsed —
+        and we got a response, regardless of whether the body parsed:
         we paid for the call, the budget should reflect that.
         """
         try:
@@ -311,7 +311,7 @@ class AdaptiveAgent:
                 timeout=_REQUEST_TIMEOUT_SECONDS,
             )
         except Exception:
-            # Network / upstream error / timeout. Don't count toward budget.
+            # Network, upstream, or timeout error. Don't count toward budget.
             return {}
 
         if consume_budget:
@@ -387,7 +387,7 @@ def _result_from_verdict(
     try:
         verdict = Verdict(raw_verdict)
     except ValueError:
-        # LLM didn't give a usable verdict — punt to UNCERTAIN.
+        # LLM didn't give a usable verdict; punt to UNCERTAIN.
         verdict = Verdict.UNCERTAIN
 
     rationale = str(parsed.get("rationale", "")) or "(no rationale provided)"

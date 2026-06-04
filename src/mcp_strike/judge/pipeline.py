@@ -6,9 +6,9 @@ owns that policy: which results are judged, in what order, and how the
 per-run LLM-call cap is enforced.
 
 Layered scoring rationale:
-- ``FAILURE`` rows are cheap negatives — judging them wastes calls.
-- ``UNCERTAIN`` rows are the prime targets — heuristic couldn't decide.
-- ``SUCCESS`` rows get a confirmation pass — catches heuristic false positives.
+- ``FAILURE`` rows are cheap negatives; judging them wastes calls.
+- ``UNCERTAIN`` rows are the prime targets; heuristic couldn't decide.
+- ``SUCCESS`` rows get a confirmation pass; catches heuristic false positives.
 """
 
 from __future__ import annotations
@@ -41,13 +41,13 @@ async def annotate_with_judge(
         max_calls: Hard cap on real LLM calls for this run.
 
     Returns:
-        The number of real LLM calls actually made — useful for reports
+        The number of real LLM calls actually made; useful for reports
         ("ran 7 of 20 LLM calls").
     """
     calls_made = 0
 
     for result in results:
-        # Skip FAILURE rows — already-cheap negatives. Their ``judge`` stays None.
+        # Skip FAILURE rows (already-cheap negatives). Their ``judge`` stays None.
         if result.verdict == Verdict.FAILURE:
             continue
 

@@ -52,7 +52,7 @@ def test_result_row_has_documented_shape() -> None:
         "evidence",
         "judge",
     }
-    # Stage/verdict are emitted as the str-Enum's *value*, not the repr —
+    # Stage/verdict are emitted as the str-Enum's *value*, not the repr;
     # CI consumers shouldn't have to know about Python enums.
     assert row["stage"] == "metadata"
     assert row["verdict"] == "success"
@@ -86,7 +86,7 @@ def test_llm_call_metadata_passes_through() -> None:
 
 
 def test_llm_call_metadata_defaults_to_none() -> None:
-    """Calls with no judge metadata yield null — distinguishable from 0."""
+    """Calls with no judge metadata yield null; distinguishable from 0."""
     doc = render_json([])
     assert doc["summary"]["llm_calls_used"] is None
     assert doc["summary"]["llm_calls_cap"] is None
@@ -100,7 +100,7 @@ def test_agent_call_metadata_passes_through() -> None:
 
 
 def test_agent_call_metadata_defaults_to_none() -> None:
-    """Calls with no agent metadata yield null — distinguishable from 0."""
+    """Calls with no agent metadata yield null; distinguishable from 0."""
     doc = render_json([])
     assert doc["summary"]["agent_calls_used"] is None
     assert doc["summary"]["agent_calls_cap"] is None

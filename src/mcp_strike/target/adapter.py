@@ -1,14 +1,13 @@
-"""Target adapter — the normalized 'server under test' surface.
+"""Target adapter: the normalized 'server under test' surface.
 
 Attack modules consume :class:`Target` and don't need to know whether the
-underlying transport is stdio or HTTP. v0.1 wires up stdio only; HTTP
-arrives in a later release.
+underlying transport is stdio or HTTP. Currently stdio only.
 
-Two pieces live here:
+Three pieces live here:
 
-- :class:`ToolInfo`  — a small, attack-friendly representation of one tool.
-- :class:`Target`    — a connected MCP session, with normalized methods.
-- :func:`open_stdio_target` — convenience async context manager that
+- :class:`ToolInfo`: a small, attack-friendly representation of one tool.
+- :class:`Target`: a connected MCP session, with normalized methods.
+- :func:`open_stdio_target`: convenience async context manager that
   combines :func:`mcp_strike.client.open_stdio_session` with a Target wrapper.
 """
 
@@ -68,7 +67,7 @@ class Target:
         self._session = session
         self._call_timeout = call_timeout
         # Cached on the first successful list_tools() call. Stays put for
-        # the lifetime of this Target — typically one scan run. Several
+        # the lifetime of this Target, typically one scan run. Several
         # attacks plus the agent each call list_tools() independently;
         # caching collapses those N stdio round-trips into 1.
         #
@@ -90,7 +89,7 @@ class Target:
                 name=tool.name,
                 # MCP allows `description` to be null in the spec; coerce.
                 description=tool.description or "",
-                # And likewise for the schema — older servers may omit it.
+                # And likewise for the schema; older servers may omit it.
                 input_schema=tool.inputSchema or {},
             )
             for tool in result.tools

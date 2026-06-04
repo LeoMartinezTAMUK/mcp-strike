@@ -1,6 +1,6 @@
 """Unit tests for the AdaptiveAgent.
 
-Same fake-client pattern as ``test_judge_openai.py`` — we mimic the bits
+Same fake-client pattern as ``test_judge_openai.py``: we mimic the bits
 of ``openai.AsyncOpenAI`` that the agent actually touches and feed it a
 queue of canned responses, then assert on what the agent did.
 
@@ -43,7 +43,7 @@ class _FakeResponse:
 class _FakeCompletions:
     """Returns canned responses from a queue, one per ``.create()`` call.
 
-    Pass ``raise_always`` to simulate a permanently-broken API — every
+    Pass ``raise_always`` to simulate a permanently-broken API: every
     call raises the supplied exception, mimicking a network/upstream
     failure.
     """

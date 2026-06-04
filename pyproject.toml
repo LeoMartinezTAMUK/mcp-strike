@@ -1,4 +1,4 @@
-# pyproject.toml — MCP-Strike
+# pyproject.toml for MCP-Strike
 #
 # Distribution name (PyPI): mcp-strike
 # Importable Python package: mcp_strike
@@ -7,7 +7,7 @@
 [project]
 name = "mcp-strike"
 version = "0.1.0"
-description = "Active, runtime adversarial testing for MCP servers — point it at your own server and find out what breaks."
+description = "Active, runtime adversarial testing for MCP servers: point it at your own server and find out what breaks."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
@@ -45,11 +45,11 @@ dependencies = [
     "rich>=13.7",     # Pretty terminal output.
     "httpx>=0.27",    # HTTP client (for future HTTP-transport MCP support + LLM API calls).
     "pydantic>=2.7",  # Config + data models.
-    "openai>=1.40",   # OpenAI Python SDK — used by the Phase-2 LLM-as-judge.
+    "openai>=1.40",   # OpenAI Python SDK; used by the LLM-as-judge layer.
 ]
 
 [project.optional-dependencies]
-# Dev tools — installed via `uv sync --extra dev`.
+# Dev tools; installed via `uv sync --extra dev`.
 dev = [
     "pytest>=8.0",
     "pytest-cov>=4.0",  # coverage measurement; run via `uv run pytest --cov`
@@ -117,7 +117,7 @@ select = ["E", "W", "F", "I", "UP", "B"]
 [tool.pytest.ini_options]
 # Where to look for tests, and how to make mcp_strike importable without
 # installing. We no longer need the repo root on pythonpath now that
-# `demo_server` lives inside the package (was needed pre-Phase-4 to find
+# `demo_server` lives inside the package (was needed back when
 # `demo_server/` at the repo root).
 testpaths = ["tests"]
 pythonpath = ["src"]
@@ -127,13 +127,13 @@ addopts = "-ra"
 # Coverage (pytest-cov)
 # -----------------------------------------------------------------------------
 # Default coverage scope = the production source. Tests live under tests/
-# and shouldn't count toward "lines covered" — that's a tautology.
+# and shouldn't count toward "lines covered"; that's a tautology.
 # Run with: uv run pytest --cov
 
 [tool.coverage.run]
 source = ["src/mcp_strike"]
 # Don't measure code paths only run when a user has an OPENAI_API_KEY set
-# locally — that path is exercised by integration tests gated on the env.
+# locally; that path is exercised by integration tests gated on the env.
 # Keeping them out of the report avoids "uncovered" lines that aren't
 # really uncovered, just CI-skipped.
 omit = []
@@ -143,9 +143,8 @@ omit = []
 # tell where to add a test.
 show_missing = true
 skip_covered = false
-# Don't fail the build on low coverage yet — Phase 4 polish is about
-# surfacing the number, not gating on it. Bump this when we have a
-# defensible floor.
+# Don't fail the build on low coverage yet; the goal here is to surface
+# the number, not gate on it. Bump this when we have a defensible floor.
 fail_under = 0
 
 # -----------------------------------------------------------------------------
@@ -159,7 +158,7 @@ fail_under = 0
 
 [tool.mypy]
 python_version = "3.10"
-# Scope: production code only. Tests can stay loose — they're full of
+# Scope: production code only. Tests can stay loose; they're full of
 # fakes and ad-hoc shapes that benefit less from strict typing.
 files = ["src/mcp_strike"]
 warn_unused_ignores = true
@@ -171,7 +170,7 @@ check_untyped_defs = true
 # Third-party SDKs whose type stubs aren't guaranteed. ``mcp`` ships
 # inline annotations but mypy has been known to have trouble resolving
 # them in some configurations; ``openai`` is similar. If we hit real
-# issues here we can pin specific overrides — for now, be permissive.
+# issues here we can pin specific overrides; for now, be permissive.
 [[tool.mypy.overrides]]
 module = ["mcp.*", "openai.*"]
 ignore_missing_imports = true

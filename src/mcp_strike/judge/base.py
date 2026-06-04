@@ -19,7 +19,7 @@ class BaseJudge(abc.ABC):
 
     Subclasses implement :meth:`judge` to return a :class:`JudgeAnnotation`
     for any given :class:`AttackResult`. The scan pipeline owns the
-    decision of *when* to call the judge — implementations should just
+    decision of *when* to call the judge; implementations should just
     answer when asked.
     """
 
@@ -27,7 +27,7 @@ class BaseJudge(abc.ABC):
     async def judge(self, result: AttackResult) -> JudgeAnnotation:
         """Return the judge's opinion on this attack result.
 
-        Implementations must not raise on API errors — wrap any failure in
+        Implementations must not raise on API errors; wrap any failure in
         a ``ran=False`` annotation with a rationale so callers can keep
         the scan going. The scan pipeline shouldn't have to know about
         provider-specific failure modes.

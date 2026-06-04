@@ -94,7 +94,7 @@ def test_no_timeout_when_call_returns_quickly() -> None:
     """A call faster than the timeout should succeed normally.
 
     Pairing with the above tests proves the timeout actually does
-    something — not just always-raises behavior.
+    something, not just always-raises behavior.
     """
     # Delay shorter than timeout. Real call returns a sentinel.
     session = _FakeSession(delay=0.0)
@@ -120,7 +120,7 @@ def test_list_tools_is_cached_after_first_call() -> None:
     tools_a = asyncio.run(target.list_tools())
     tools_b = asyncio.run(target.list_tools())
 
-    # Same list object, not just equal — proves we returned the cache.
+    # Same list object, not just equal; proves we returned the cache.
     assert tools_a is tools_b
     # And the underlying session was hit exactly once.
     assert session.list_tools_calls == 1

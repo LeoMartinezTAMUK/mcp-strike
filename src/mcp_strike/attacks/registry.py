@@ -61,7 +61,7 @@ def unregister_for_testing(name: str) -> type[BaseAttack] | None:
     The registry is global module-level state. Tests that register dummy
     attack subclasses via :func:`register_attack` should call this in their
     ``finally`` block to keep cross-test state hygienic. Production code
-    should never call this — attack registration is meant to be permanent
+    should never call this; attack registration is meant to be permanent
     for the life of the process.
 
     Returns the previously-registered class, or ``None`` if no entry
