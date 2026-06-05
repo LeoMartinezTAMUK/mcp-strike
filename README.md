@@ -221,6 +221,16 @@ If you find a vulnerability in someone else's server while using this tool, foll
 
 To report a security issue in MCP-Strike itself (not in a third-party server), see [`SECURITY.md`](SECURITY.md).
 
+## Contact
+
+Built and maintained by **Leo Martinez III**.
+
+- Email: [mtz3.leo@gmail.com](mailto:mtz3.leo@gmail.com)
+- LinkedIn: [linkedin.com/in/leo-martinez-iii](https://www.linkedin.com/in/leo-martinez-iii/)
+- GitHub: [@LeoMartinezTAMUK](https://github.com/LeoMartinezTAMUK)
+
+For security issues in MCP-Strike itself, see [`SECURITY.md`](SECURITY.md). For bug reports and feature requests, the [issue tracker](https://github.com/LeoMartinezTAMUK/mcp-strike/issues) is the fastest path. For anything else, the email and LinkedIn above both work.
+
 ## License
 
 MIT. See [`LICENSE`](LICENSE).
