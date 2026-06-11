@@ -277,6 +277,33 @@ def test_handles_api_error_during_tool_attack() -> None:
         assert entry["is_error"] is True
 
 
+def test_api_outage_short_circuits_remaining_tools() -> None:
+    """A hard API outage should trip the breaker, not retry every tool.
+
+    With max_rounds=3 and 5 tools, a naive implementation would attempt up
+    to 5 * (3 + 1) = 20 calls against the dead API. The consecutive-failure
+    breaker (threshold 3) caps that: the first tool exhausts the 3 failures,
+    and every later tool short-circuits to an 'unreachable' result without a
+    single extra call.
+    """
+    fake = _FakeOpenAI(raise_always=RuntimeError("upstream is down"))
+    agent = AdaptiveAgent(client=fake, model="test-model", max_rounds=3, max_calls=50)
+
+    tools = [_tool(f"t{i}") for i in range(5)]
+    results = asyncio.run(agent.attack_all_tools(tools, _target_returning("ok")))
+
+    # Every tool still gets a result row.
+    assert len(results) == 5
+    # The breaker bounds total API attempts at the failure threshold (3),
+    # far below the naive 20.
+    assert len(fake.calls) == 3
+    # No successful calls → no budget consumed.
+    assert agent.calls_made == 0
+    # Every tool lands on UNCERTAIN, and the later ones cite the outage.
+    assert all(r.verdict == Verdict.UNCERTAIN for r in results)
+    assert "aborted" in results[-1].rationale.lower()
+
+
 # --- real-API integration test, gated by env --------------------------------
 
 

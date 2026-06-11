@@ -103,6 +103,27 @@ class _ScanMetadata:
 # ---------------------------------------------------------------------------
 
 
+def _describe_target_error(exc: BaseException) -> str:
+    """Pull a human-readable cause out of a target connection failure.
+
+    The MCP stdio client runs its transport inside an anyio task group, so a
+    failure to launch the server (bad command) or to speak MCP to it (the
+    process started but isn't an MCP server) often surfaces as an
+    ``ExceptionGroup`` whose own message is the unhelpful "unhandled errors
+    in a TaskGroup". We unwrap to the first leaf so the user sees the real
+    cause ("No such file or directory") instead.
+
+    Duck-typed on ``.exceptions`` rather than catching ``ExceptionGroup`` by
+    type: that attribute exists on both the 3.11+ builtin and the
+    ``exceptiongroup`` backport used on 3.10, so this stays version-portable
+    without a conditional import.
+    """
+    inner = getattr(exc, "exceptions", None)
+    if inner:
+        return _describe_target_error(inner[0])
+    return f"{type(exc).__name__}: {exc}"
+
+
 def _print_notice(console: Console) -> None:
     """Render the responsible-use notice in a yellow panel."""
     console.print(
@@ -299,21 +320,47 @@ def _run_scan(
     # JSON shows null, not 0.
     agent_actually_ran = _should_run_agent(agent=agent, filter_names=run_cfg.attacks)
 
+    # Mirror the agent's null-vs-0 handling for the judge. ``judge_enabled``
+    # is what the user *requested*; ``_build_judge`` may still have fallen
+    # back to NullJudge (e.g. ``--judge`` forced on with no OPENAI_API_KEY).
+    # Keying the JSON metadata off whether a *real* judge was constructed
+    # keeps "null = judge didn't run" honest, instead of reporting 0 calls
+    # for a judge that never actually ran.
+    judge_actually_ran = not isinstance(judge, NullJudge)
+
     # Notice: terminal-mode only, when not suppressed.
     if not json_output and not output_file and run_cfg.show_responsible_use_notice:
         _print_notice(Console())
 
-    results, metadata = asyncio.run(
-        _scan_async(target_cfg, run_cfg, judge, agent)
-    )
+    try:
+        results, metadata = asyncio.run(
+            _scan_async(target_cfg, run_cfg, judge, agent)
+        )
+    except Exception as exc:
+        # Anything escaping here is a connect/transport-phase failure:
+        # attacks catch their own probe errors (returning UNCERTAIN rows), so
+        # by the time we're running them the scan no longer raises. The
+        # dominant case is a mistyped --command or a server that fails to
+        # start — the most common first-run mistake. Surface it as one clean
+        # line instead of a deep asyncio/anyio traceback.
+        typer.echo(
+            f"error: could not scan target {target_cfg.command!r}: "
+            f"{_describe_target_error(exc)}",
+            err=True,
+        )
+        typer.echo(
+            "hint: ensure the command launches a working MCP server over stdio.",
+            err=True,
+        )
+        raise typer.Exit(code=2) from exc
 
     # JSON output path: file or stdout.
     if json_output or output_file:
         text = render_json_string(
             results,
             # null vs 0: null = feature didn't run, 0 = ran but made 0 calls.
-            llm_calls_used=metadata.llm_calls_used if judge_enabled else None,
-            llm_calls_cap=run_cfg.max_llm_calls if judge_enabled else None,
+            llm_calls_used=metadata.llm_calls_used if judge_actually_ran else None,
+            llm_calls_cap=run_cfg.max_llm_calls if judge_actually_ran else None,
             agent_calls_used=metadata.agent_calls_used if agent_actually_ran else None,
             agent_calls_cap=run_cfg.max_agent_calls if agent_actually_ran else None,
         )

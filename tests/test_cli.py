@@ -109,6 +109,41 @@ def test_demo_json_judge_metadata_when_disabled() -> None:
             assert judge["ran"] is False, f"unexpected ran=True with --no-judge: {row}"
 
 
+def test_demo_judge_forced_without_key_reports_null_metadata(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`--judge` with no API key falls back to NullJudge; metadata stays null.
+
+    Regression guard for the null-vs-0 fix: a judge that was *requested* but
+    couldn't actually run must report `null` call counts, not `0`. We chdir
+    into an empty tmp dir so the repo's own `.env` can't re-inject a key, and
+    use a runner that keeps the fallback warning (stderr) out of the JSON.
+    """
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.chdir(tmp_path)
+
+    # Write the report to a file rather than parsing stdout: the judge-disabled
+    # warning goes to stderr, and reading the file sidesteps any stdout/stderr
+    # handling differences across click versions.
+    out_path = tmp_path / "scan.json"
+    result = runner.invoke(
+        app,
+        [
+            "demo",
+            "--judge",
+            "--no-agent",
+            "--no-notice",
+            "--output-file",
+            str(out_path),
+        ],
+    )
+    assert result.exit_code == 0, result.output
+
+    summary = json.loads(out_path.read_text(encoding="utf-8"))["summary"]
+    assert summary["llm_calls_used"] is None
+    assert summary["llm_calls_cap"] is None
+
+
 def test_demo_output_file_writes_json_to_disk(tmp_path: Path) -> None:
     """`--output-file PATH` writes the JSON report to disk."""
     out_path = tmp_path / "scan.json"
@@ -140,6 +175,29 @@ def test_scan_rejects_unknown_attack_name() -> None:
     )
     assert result.exit_code != 0
     assert "no_such_attack" in result.output
+
+
+def test_scan_reports_clean_error_for_unlaunchable_target() -> None:
+    """A bogus --command should yield a clean error, not a Python traceback.
+
+    This is the most common first-run mistake. We assert a non-zero exit, a
+    human-readable 'error:' line, and crucially that no raw traceback leaked
+    to the user.
+    """
+    result = runner.invoke(
+        app,
+        [
+            "scan",
+            "--command", "no_such_executable_xyz",
+            "--no-judge",
+            "--no-agent",
+            "--no-notice",
+        ],
+    )
+    assert result.exit_code != 0
+    assert "could not scan target" in result.output
+    # The whole point: the deep asyncio/anyio stack must not reach the user.
+    assert "Traceback" not in result.output
 
 
 def test_only_adaptive_agent_is_a_valid_filter() -> None:

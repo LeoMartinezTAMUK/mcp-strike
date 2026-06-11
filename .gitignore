@@ -30,8 +30,11 @@ Thumbs.db
 # file (useful for the maintainer's development workflow, not for public
 # consumption). docs/PLAN.md is the maintainer's working plan document
 # with personal context; the public-facing roadmap lives in ROADMAP.md.
+# .claude/ holds local Claude Code settings (permission allow-lists etc.),
+# which are per-machine and shouldn't ship in the public repo.
 CLAUDE.md
 docs/PLAN.md
+.claude/
 
 # uv lockfile location is up to the project; keep it tracked normally.
 # (uv.lock should be committed for reproducible builds. Don't ignore it.)

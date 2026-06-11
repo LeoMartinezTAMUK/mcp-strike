@@ -61,6 +61,15 @@ _DEFAULT_MAX_CALLS = 50
 # scan indefinitely. Matches the judge's timeout for consistency.
 _REQUEST_TIMEOUT_SECONDS = 30.0
 
+# Circuit breaker: after this many *consecutive* failed LLM calls, the agent
+# gives up on the rest of the run rather than retrying against every
+# remaining tool. The per-run ``max_calls`` cap only counts *successful*
+# calls (a failed call costs nothing, so it shouldn't burn budget), which
+# means a hard API outage would otherwise let the agent attempt
+# ``n_tools * (max_rounds + 1)`` calls, each up to the 30s timeout. This
+# bound keeps a down API from stalling the whole scan for minutes.
+_MAX_CONSECUTIVE_FAILURES = 3
+
 # The attack_name carried by every AttackResult the agent emits. Kept as
 # a single constant so the CLI's --only filter can target it.
 ATTACK_NAME = "adaptive_agent"
@@ -175,6 +184,10 @@ class AdaptiveAgent:
         # Counter of *real* LLM calls made. Reset across instances; for one
         # scan run, reuse a single instance to share the budget.
         self._calls_made = 0
+        # Consecutive-failure counter for the circuit breaker. Incremented
+        # when an LLM call raises, reset to 0 on any successful call. See
+        # ``_MAX_CONSECUTIVE_FAILURES``.
+        self._consecutive_failures = 0
 
     @property
     def calls_made(self) -> int:
@@ -238,6 +251,10 @@ class AdaptiveAgent:
         self, tool: ToolInfo, target: Target
     ) -> AttackResult:
         """Probe a single tool and return one AttackResult."""
+        if self._consecutive_failures >= _MAX_CONSECUTIVE_FAILURES:
+            # A prior tool already hit a run of API failures; don't keep
+            # hammering a dead endpoint for every remaining tool.
+            return _api_unreachable_result(tool)
         if self._calls_made >= self._max_calls:
             return _cap_reached_result(tool, calls_made=self._calls_made, cap=self._max_calls)
 
@@ -249,6 +266,8 @@ class AdaptiveAgent:
                 return _cap_reached_result(
                     tool, calls_made=self._calls_made, cap=self._max_calls, history=history
                 )
+            if self._consecutive_failures >= _MAX_CONSECUTIVE_FAILURES:
+                return _api_unreachable_result(tool, history=history)
 
             parsed = await self._call_llm(
                 _build_propose_prompt(tool, history),
@@ -282,6 +301,8 @@ class AdaptiveAgent:
             return _cap_reached_result(
                 tool, calls_made=self._calls_made, cap=self._max_calls, history=history
             )
+        if self._consecutive_failures >= _MAX_CONSECUTIVE_FAILURES:
+            return _api_unreachable_result(tool, history=history)
 
         parsed = await self._call_llm(
             _build_final_prompt(tool, history),
@@ -311,9 +332,15 @@ class AdaptiveAgent:
                 timeout=_REQUEST_TIMEOUT_SECONDS,
             )
         except Exception:
-            # Network, upstream, or timeout error. Don't count toward budget.
+            # Network, upstream, or timeout error. Don't count toward budget,
+            # but do trip the consecutive-failure breaker so a hard outage
+            # can't make us retry against every remaining tool.
+            self._consecutive_failures += 1
             return {}
 
+        # A response came back (even if its body turns out to be junk): the
+        # API is reachable, so reset the breaker.
+        self._consecutive_failures = 0
         if consume_budget:
             self._calls_made += 1
 
@@ -436,6 +463,28 @@ def _cap_reached_result(
         evidence={
             "calls_made": calls_made,
             "cap": cap,
+            "rounds_partial": 0 if history is None else len(history),
+        },
+    )
+
+
+def _api_unreachable_result(
+    tool: ToolInfo,
+    *,
+    history: list[_ProbeOutcome] | None = None,
+) -> AttackResult:
+    """Build the AttackResult attached when the API-failure breaker trips."""
+    return AttackResult(
+        attack_name=ATTACK_NAME,
+        stage=Stage.RESPONSE,
+        target_tool=tool.name,
+        verdict=Verdict.UNCERTAIN,
+        rationale=(
+            f"Agent aborted: the LLM API failed {_MAX_CONSECUTIVE_FAILURES} "
+            f"time(s) in a row; could not probe this tool."
+        ),
+        evidence={
+            "consecutive_failures": _MAX_CONSECUTIVE_FAILURES,
             "rounds_partial": 0 if history is None else len(history),
         },
     )

@@ -32,7 +32,7 @@ Scan summary: 29 check(s) ran. 5 SUCCESS, 2 UNCERTAIN, 22 FAILURE
 ┏━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┳──────────────────────────────────────┓
 ┃ Verdict   ┃ Stage      ┃ Attack                       ┃ Tool            ┃ Rationale                            ┃
 ┡━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━╇──────────────────────────────────────┩
-│ SUCCESS   │ metadata   │ description_prompt_injection │ get_weather     │ Description contains 3 known         │
+│ SUCCESS   │ metadata   │ description_prompt_injection │ get_weather     │ Description contains 2 known         │
 │           │            │                              │                 │ prompt-injection markers.            │
 │ SUCCESS   │ metadata   │ overreaching_parameters      │ submit_feedback │ Tool requests 'user_password',       │
 │           │            │                              │                 │ 'api_key'.                           │
@@ -50,6 +50,8 @@ Scan summary: 29 check(s) ran. 5 SUCCESS, 2 UNCERTAIN, 22 FAILURE
 ```
 
 `FAILURE` rows are hidden by default for readability; pass `--show-all` to see the clean checks too.
+
+> The sample above is from Linux/macOS. On Windows the demo's `read_file` tool finds no host `/etc/passwd` to read, so `path_traversal_probe` returns `UNCERTAIN` instead of `SUCCESS` — you'll see 4 SUCCESS / 3 UNCERTAIN. The other findings are platform-independent.
 
 ## How it works
 
