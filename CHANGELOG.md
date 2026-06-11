@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-06-11
+
 ### Added
 - `--verbose` / `-v` flag on `scan` and `demo` to surface mcp-strike's own
   debug logging (LLM-response parse failures, etc.) on stderr.
@@ -69,5 +71,6 @@ list and what's planned next.
   vulnerabilities for one-command validation (`mcp-strike demo`).
 - Per-MCP-call and per-LLM-call timeouts, and `.env` auto-loading.
 
-[Unreleased]: https://github.com/LeoMartinezTAMUK/mcp-strike/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/LeoMartinezTAMUK/mcp-strike/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/LeoMartinezTAMUK/mcp-strike/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/LeoMartinezTAMUK/mcp-strike/releases/tag/v0.1.0
