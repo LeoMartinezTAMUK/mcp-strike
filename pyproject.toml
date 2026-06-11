@@ -10,7 +10,10 @@ version = "0.1.0"
 description = "Active, runtime adversarial testing for MCP servers: point it at your own server and find out what breaks."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { file = "LICENSE" }
+# PEP 639: SPDX license expression + the license file(s) to ship in the
+# distribution. Replaces the older `license = { file = "LICENSE" }` table.
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "Leo Martinez III" }]
 keywords = [
     "mcp",
@@ -27,7 +30,9 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: Console",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
+    # No "License ::" classifier: with a PEP 639 SPDX `license` expression
+    # above, the license classifier is redundant (and rejected by modern
+    # build backends).
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -75,7 +80,8 @@ Documentation = "https://github.com/LeoMartinezTAMUK/mcp-strike#readme"
 # explicitly tell hatch where the package lives.
 
 [build-system]
-requires = ["hatchling"]
+# hatchling >= 1.27 understands the PEP 639 `license`/`license-files` keys.
+requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
@@ -132,11 +138,12 @@ addopts = "-ra"
 
 [tool.coverage.run]
 source = ["src/mcp_strike"]
-# Don't measure code paths only run when a user has an OPENAI_API_KEY set
-# locally; that path is exercised by integration tests gated on the env.
-# Keeping them out of the report avoids "uncovered" lines that aren't
-# really uncovered, just CI-skipped.
-omit = []
+# The demo server runs as a separate subprocess during the scan, so the
+# in-process coverage tool can't see it execute — it would always read as
+# 0% and drag the headline number down, even though the CLI/integration
+# tests exercise it end to end. Exclude it so the reported percentage
+# reflects the code coverage actually measures.
+omit = ["src/mcp_strike/demo_server/*"]
 
 [tool.coverage.report]
 # Surface the missing-line ranges right in the terminal report so we can

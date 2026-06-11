@@ -28,6 +28,7 @@ Adaptive agent defaults:
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 import sys
 from dataclasses import dataclass
@@ -101,6 +102,24 @@ class _ScanMetadata:
 # ---------------------------------------------------------------------------
 # Internal helpers (not subcommands)
 # ---------------------------------------------------------------------------
+
+
+def _configure_logging(*, verbose: bool) -> None:
+    """Surface mcp-strike's own DEBUG logs when ``--verbose`` is set.
+
+    The judge and agent log parse failures (and other diagnostics) at DEBUG;
+    they're invisible at the default level. ``--verbose`` attaches a stderr
+    handler scoped to the ``mcp_strike`` logger tree, so third-party DEBUG
+    noise (httpx, openai, mcp, asyncio) stays out. A no-op without the flag,
+    so default runs are unchanged.
+    """
+    if not verbose:
+        return
+    handler = logging.StreamHandler()  # defaults to stderr
+    handler.setFormatter(logging.Formatter("%(levelname)s %(name)s: %(message)s"))
+    logger = logging.getLogger("mcp_strike")
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
 
 
 def _describe_target_error(exc: BaseException) -> str:
@@ -298,8 +317,11 @@ def _run_scan(
     show_all: bool,
     json_output: bool,
     output_file: str | None,
+    verbose: bool = False,
 ) -> None:
     """Shared back end for ``scan`` and ``demo``: scan, judge, agent, render."""
+    _configure_logging(verbose=verbose)
+
     # Auto-load .env from cwd before resolving any auth-dependent config.
     # Shell-exported vars still take precedence; this is purely additive.
     load_dotenv(Path.cwd() / ".env")
@@ -365,8 +387,17 @@ def _run_scan(
             agent_calls_cap=run_cfg.max_agent_calls if agent_actually_ran else None,
         )
         if output_file:
-            with open(output_file, "w", encoding="utf-8") as f:
-                f.write(text)
+            try:
+                with open(output_file, "w", encoding="utf-8") as f:
+                    f.write(text)
+            except OSError as exc:
+                # e.g. the parent directory doesn't exist, or it's not
+                # writable. Surface it cleanly instead of a traceback.
+                typer.echo(
+                    f"error: could not write report to {output_file!r}: {exc}",
+                    err=True,
+                )
+                raise typer.Exit(code=2) from exc
         else:
             # typer.echo, not Console.print: avoid Rich post-processing on JSON.
             typer.echo(text)
@@ -465,6 +496,12 @@ def scan(
         "--output-file",
         help="Write the JSON report to this path. Implies --json.",
     ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Enable mcp-strike debug logging to stderr (parse failures, etc.).",
+    ),
 ) -> None:
     """Connect to an MCP server over stdio and run all attacks against it."""
     target_cfg = TargetConfig(command=command, args=arg, call_timeout=call_timeout)
@@ -487,6 +524,7 @@ def scan(
         show_all=show_all,
         json_output=json_output,
         output_file=output_file,
+        verbose=verbose,
     )
 
 
@@ -575,6 +613,12 @@ def demo(
         "--output-file",
         help="Write the JSON report to this path. Implies --json.",
     ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Enable mcp-strike debug logging to stderr (parse failures, etc.).",
+    ),
 ) -> None:
     """Run all attacks against the bundled deliberately-vulnerable demo server."""
     target_cfg = TargetConfig(
@@ -599,6 +643,7 @@ def demo(
         show_all=show_all,
         json_output=json_output,
         output_file=output_file,
+        verbose=verbose,
     )
 
 

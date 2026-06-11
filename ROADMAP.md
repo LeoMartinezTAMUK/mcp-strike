@@ -6,8 +6,9 @@ What's shipped, what's next, and what's explicitly out of scope for v0.1. This d
 
 **v0.1.0 / alpha.** The scanner is feature-complete for the v1 deliverable: connects to any MCP server you own over stdio, runs a battery of real attacks across all three pipeline stages, optionally augments findings with an LLM judge and an LLM-driven adaptive agent, and renders results to a colorized terminal table or a stable JSON document.
 
-- **31 source modules**, ~770 lines of production code.
-- **83 tests**, ~90% line coverage on production source.
+- **31 source modules**, ~830 lines of production code.
+- **97 tests**, ~96% line coverage on production source (excludes the demo
+  server, which runs as a subprocess and so can't be measured in-process).
 - **CI gates on `ruff` + `mypy` + `pytest`** across Python 3.10, 3.11, 3.12, 3.13, plus a build-and-install smoke job that exercises the wheel end-to-end.
 - **Bundled vulnerable demo server** with 6 planted vulnerabilities covering every attack class, so a stranger can validate the tool in 60 seconds.
 

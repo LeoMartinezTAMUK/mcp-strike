@@ -213,7 +213,7 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) for project conventions, how to add a n
 
 ## Status & roadmap
 
-Currently **0.1.0 / alpha**. CI gates on `ruff` + `mypy` + `pytest` across Python 3.10 through 3.13; production source has ~90% line coverage. See [`ROADMAP.md`](ROADMAP.md) for what's next.
+Currently **0.1.0 / alpha**. CI gates on `ruff` + `mypy` + `pytest` across Python 3.10 through 3.13; production source has ~96% line coverage. See [`ROADMAP.md`](ROADMAP.md) for what's next.
 
 ## Responsible use
 

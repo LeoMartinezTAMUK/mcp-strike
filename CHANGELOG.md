@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `--verbose` / `-v` flag on `scan` and `demo` to surface mcp-strike's own
+  debug logging (LLM-response parse failures, etc.) on stderr.
+
 ### Fixed
 - Scanning a target that can't be launched (mistyped `--command`) or that
   starts but doesn't speak MCP now prints a single clear error line and exits
@@ -16,17 +20,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   not actually run (for example, `--judge` with no `OPENAI_API_KEY`). This
   matches the documented "null = feature didn't run" semantics and the
   agent's existing behavior.
+- `--output-file` to a path that can't be written (e.g. a missing parent
+  directory) now reports a clean error instead of a traceback.
 
 ### Changed
 - The adaptive agent now aborts the rest of its run after a short run of
   consecutive LLM-API failures, rather than retrying against every remaining
   tool. This bounds wall-clock time during an API outage.
+- The demo server now prints a "deliberately vulnerable" warning to stderr
+  when launched directly in a terminal (suppressed when the scanner spawns
+  it over a pipe).
+- Packaging now declares its license with a PEP 639 SPDX expression
+  (`license = "MIT"`) instead of the legacy file-table form.
 
 ### Documentation
 - Corrected the demo sample output in the README: the `get_weather` finding
   reports 2 injection markers, not 3.
 - Noted that the demo's path-traversal result differs on Windows (no
   `/etc/passwd` to read).
+- Updated the test count and coverage figure (97 tests, ~96%); the demo
+  server is now excluded from coverage measurement since it runs as a
+  subprocess.
 
 ### Internal
 - Added a `py.typed` marker so downstream type checkers honor the package's
