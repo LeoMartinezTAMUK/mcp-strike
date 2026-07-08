@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- The path-traversal probe now targets both POSIX (`/etc/passwd`) and Windows
+  (`win.ini`), probes **every** string parameter (not just the first), and
+  fills a tool's other required parameters with benign placeholders so
+  multi-parameter tools actually execute. This meaningfully widens coverage,
+  especially for Windows-hosted servers.
+
 ## [0.1.1] - 2026-06-11
 
 ### Added

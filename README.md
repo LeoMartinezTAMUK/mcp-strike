@@ -51,7 +51,7 @@ Scan summary: 29 check(s) ran. 5 SUCCESS, 2 UNCERTAIN, 22 FAILURE
 
 `FAILURE` rows are hidden by default for readability; pass `--show-all` to see the clean checks too.
 
-> The sample above is from Linux/macOS. On Windows the demo's `read_file` tool finds no host `/etc/passwd` to read, so `path_traversal_probe` returns `UNCERTAIN` instead of `SUCCESS` — you'll see 4 SUCCESS / 3 UNCERTAIN. The other findings are platform-independent.
+> Exact SUCCESS/UNCERTAIN counts can vary slightly by host OS: the path-traversal probe targets `/etc/passwd` on POSIX and `win.ini` on Windows, so the `read_file` finding fires on either platform.
 
 ## How it works
 
@@ -67,7 +67,7 @@ Five static attacks ship in v0.1, organized by the MCP pipeline stage they targe
 |---|---|---|---|
 | `description_prompt_injection` | metadata | passive | Tool descriptions carrying injection markers aimed at the calling LLM |
 | `overreaching_parameters` | metadata | passive | Tools whose schema asks for `password`, `api_key`, `ssn`, etc. |
-| `path_traversal_probe` | parameters | **active** | Tools that handle string parameters as filesystem paths (sends `../../etc/passwd`) |
+| `path_traversal_probe` | parameters | **active** | Tools that handle string parameters as filesystem paths (probes every string param with `/etc/passwd` and Windows `win.ini` payloads) |
 | `response_injection_probe` | response | **active** | Tools whose response contains injection content aimed at the calling LLM |
 | `data_exfiltration_probe` | response | **active** | Tools whose response coaxes the LLM to POST/send data to a sink |
 

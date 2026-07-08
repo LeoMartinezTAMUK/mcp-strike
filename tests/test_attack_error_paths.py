@@ -132,6 +132,40 @@ def test_path_traversal_all_probes_erroring_is_uncertain() -> None:
     assert results[0].evidence["payloads_errored"]
 
 
+def test_path_traversal_probes_every_string_parameter() -> None:
+    """The vulnerable param may not be first, and other params get filled.
+
+    Here only ``path`` leaks the file, and it's the *second* string param.
+    The probe must reach it (not just test the first param) and must fill
+    the required ``query`` param with a benign placeholder so the tool runs.
+    """
+    tool = ToolInfo(
+        name="reader",
+        description="",
+        input_schema={
+            "properties": {
+                "query": {"type": "string"},
+                "path": {"type": "string"},
+            },
+            "required": ["query", "path"],
+        },
+    )
+
+    def behavior(_name: str, args: dict[str, Any]) -> _CallResult:
+        path = args.get("path", "")
+        if isinstance(path, str) and "etc/passwd" in path:
+            return _CallResult(
+                content=[_Block(text="root:x:0:0:root:/root:/bin/bash")]
+            )
+        return _CallResult(content=[_Block(text="no results")])
+
+    target = _FakeTarget([tool], behavior)
+    results = asyncio.run(PathTraversalProbe().execute(target))
+    assert len(results) == 1
+    assert results[0].verdict == Verdict.SUCCESS
+    assert results[0].evidence["parameter"] == "path"
+
+
 # --- response injection -----------------------------------------------------
 
 
