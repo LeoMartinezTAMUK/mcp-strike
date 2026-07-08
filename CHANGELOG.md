@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-07-08
+
 ### Added
 - `--fail-on {success,uncertain}` on `scan` and `demo`: exit non-zero (code 1)
   when findings reach the given severity, so CI can gate a build on scan
@@ -92,6 +94,7 @@ list and what's planned next.
   vulnerabilities for one-command validation (`mcp-strike demo`).
 - Per-MCP-call and per-LLM-call timeouts, and `.env` auto-loading.
 
-[Unreleased]: https://github.com/LeoMartinezTAMUK/mcp-strike/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/LeoMartinezTAMUK/mcp-strike/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/LeoMartinezTAMUK/mcp-strike/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/LeoMartinezTAMUK/mcp-strike/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/LeoMartinezTAMUK/mcp-strike/releases/tag/v0.1.0
