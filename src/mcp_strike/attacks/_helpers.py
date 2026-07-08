@@ -47,21 +47,53 @@ INJECTION_MARKERS: tuple[str, ...] = (
 )
 
 
+# Sentinel meaning "couldn't build a placeholder for this property". Distinct
+# from ``None`` because ``None`` (JSON null) can be a legitimate value.
+_UNBUILDABLE = object()
+
+
+def _placeholder_for_spec(spec: dict[str, Any]) -> Any:
+    """Return a benign placeholder for one property spec, or ``_UNBUILDABLE``.
+
+    - An ``enum`` constrains the value to a fixed set, so any placeholder
+      outside it would be rejected; use the first allowed value.
+    - JSON Schema allows ``type`` to be a list (e.g. ``["string", "null"]``);
+      try each in order and use the first scalar we know how to build.
+    """
+    enum = spec.get("enum")
+    if isinstance(enum, list) and enum:
+        return enum[0]
+
+    type_ = spec.get("type")
+    types = type_ if isinstance(type_, list) else [type_]
+    for t in types:
+        if t == "string":
+            return "status"
+        if t == "integer":
+            return 1
+        if t == "number":
+            return 1.0
+        if t == "boolean":
+            return True
+    # Unknown or compound type (object/array/etc.); can't safely build a value.
+    return _UNBUILDABLE
+
+
 def benign_args(schema: dict[str, Any]) -> dict[str, Any] | None:
     """Build a minimal valid args dict from a tool's JSON Schema.
 
-    Returns ``None`` when we can't safely build args (typically when the
-    schema asks for object/array/enum types we don't model, or when the
-    schema isn't shaped like we expect). Returning ``None`` is the signal
-    for "skip this tool".
+    Returns ``None`` when we can't safely build args (typically when a
+    required property is a compound type we don't model, or when the schema
+    isn't shaped like we expect). Returning ``None`` is the signal for
+    "skip this tool".
 
     Strategy: cover the schema's ``required`` properties with placeholder
-    values keyed by JSON-Schema ``type``. Strings get a benign-looking
-    word, numerics get small constants, booleans get True.
+    values (see :func:`_placeholder_for_spec`) — the first ``enum`` value
+    when constrained, otherwise a type-keyed constant.
 
-    We deliberately don't try to make the args "realistic"; most attacks
-    here only care whether the tool responds at all and what's in that
-    response. A clever placeholder won't increase recall meaningfully.
+    We deliberately don't try to make the args "realistic"; most attacks here
+    only care whether the tool responds at all and what's in that response.
+    A clever placeholder won't increase recall meaningfully.
     """
     props = schema.get("properties")
     if not isinstance(props, dict):
@@ -76,18 +108,10 @@ def benign_args(schema: dict[str, Any]) -> dict[str, Any] | None:
         spec = props.get(name)
         if not isinstance(spec, dict):
             return None
-        type_ = spec.get("type")
-        if type_ == "string":
-            args[name] = "status"
-        elif type_ == "integer":
-            args[name] = 1
-        elif type_ == "number":
-            args[name] = 1.0
-        elif type_ == "boolean":
-            args[name] = True
-        else:
-            # Unknown or compound type; can't safely build a value.
+        value = _placeholder_for_spec(spec)
+        if value is _UNBUILDABLE:
             return None
+        args[name] = value
     return args
 
 

@@ -180,7 +180,14 @@ Stable schema, suitable for CI pipelines. Top-level shape:
 }
 ```
 
-Exit code is 0 even when findings exist; CI consumers decide what verdict counts as a build failure.
+By default the exit code is 0 even when findings exist, so you can parse the JSON and decide for yourself. To let the scan itself gate a build, add `--fail-on`:
+
+```bash
+mcp-strike scan --command ... --fail-on success     # exit 1 if any confirmed vuln
+mcp-strike scan --command ... --fail-on uncertain   # exit 1 on vulns OR unresolved rows
+```
+
+Exit codes: `0` = clean (or `--fail-on` not set), `1` = findings met the `--fail-on` threshold, `2` = an operational error (e.g. the target couldn't be launched). A `--fail-on` gate never masks a `2`.
 
 ## Architecture at a glance
 

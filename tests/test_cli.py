@@ -24,7 +24,8 @@ import pytest
 import typer
 from typer.testing import CliRunner
 
-from mcp_strike.cli import _parse_env, app
+from mcp_strike.attacks import AttackResult, Stage, Verdict
+from mcp_strike.cli import _meets_fail_threshold, _parse_env, app
 
 runner = CliRunner()
 
@@ -291,6 +292,50 @@ def test_scan_accepts_env_flag_end_to_end() -> None:
     )
     assert result.exit_code == 0, result.output
     assert "SUCCESS" in result.stdout
+
+
+def _result(verdict: Verdict) -> AttackResult:
+    return AttackResult(
+        attack_name="a",
+        stage=Stage.METADATA,
+        target_tool="t",
+        verdict=verdict,
+        rationale="r",
+    )
+
+
+def test_fail_threshold_none_never_trips() -> None:
+    assert _meets_fail_threshold([_result(Verdict.SUCCESS)], None) is False
+
+
+def test_fail_threshold_success_trips_only_on_success() -> None:
+    assert _meets_fail_threshold(
+        [_result(Verdict.UNCERTAIN), _result(Verdict.FAILURE)], "success"
+    ) is False
+    assert _meets_fail_threshold([_result(Verdict.SUCCESS)], "success") is True
+
+
+def test_fail_threshold_uncertain_is_the_lower_bar() -> None:
+    """`uncertain` also trips on SUCCESS, but never on plain FAILURE."""
+    assert _meets_fail_threshold([_result(Verdict.UNCERTAIN)], "uncertain") is True
+    assert _meets_fail_threshold([_result(Verdict.SUCCESS)], "uncertain") is True
+    assert _meets_fail_threshold([_result(Verdict.FAILURE)], "uncertain") is False
+
+
+def test_demo_fail_on_success_exits_nonzero() -> None:
+    """The demo has confirmed vulns, so --fail-on success must exit code 1."""
+    result = runner.invoke(
+        app, ["demo", "--no-judge", "--no-agent", "--no-notice", "--fail-on", "success"]
+    )
+    assert result.exit_code == 1, result.output
+
+
+def test_fail_on_rejects_invalid_value() -> None:
+    result = runner.invoke(
+        app, ["demo", "--no-judge", "--no-agent", "--no-notice", "--fail-on", "bogus"]
+    )
+    assert result.exit_code != 0
+    assert "fail-on" in result.output.lower()
 
 
 def test_version_flag_prints_and_exits() -> None:

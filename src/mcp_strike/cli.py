@@ -42,7 +42,7 @@ from rich.table import Table
 from mcp_strike import __version__
 from mcp_strike.agent import ATTACK_NAME as AGENT_ATTACK_NAME
 from mcp_strike.agent import AdaptiveAgent
-from mcp_strike.attacks import AttackResult, BaseAttack, get_all_attacks
+from mcp_strike.attacks import AttackResult, BaseAttack, Verdict, get_all_attacks
 from mcp_strike.config import RunConfig, TargetConfig
 from mcp_strike.config.dotenv import load_dotenv
 from mcp_strike.judge import BaseJudge, NullJudge, OpenAIJudge, annotate_with_judge
@@ -164,6 +164,28 @@ def _parse_env(pairs: list[str]) -> dict[str, str] | None:
             raise typer.BadParameter(f"--env expects KEY=VALUE, got {item!r}")
         env[key] = value
     return env
+
+
+# Accepted values for ``--fail-on`` (besides "don't fail", i.e. ``None``).
+_FAIL_ON_CHOICES = ("success", "uncertain")
+
+
+def _meets_fail_threshold(
+    results: list[AttackResult], fail_on: str | None
+) -> bool:
+    """Return True when the scan should exit non-zero given ``--fail-on``.
+
+    ``None`` never fails (the default: exit 0 regardless of findings).
+    ``"success"`` fails when any confirmed vulnerability is present.
+    ``"uncertain"`` is the lower bar: it also fails on UNCERTAIN rows (useful
+    for a strict CI gate that wants a human to look at anything unresolved).
+    """
+    if fail_on is None:
+        return False
+    tripping = {Verdict.SUCCESS}
+    if fail_on == "uncertain":
+        tripping.add(Verdict.UNCERTAIN)
+    return any(r.verdict in tripping for r in results)
 
 
 def _print_notice(console: Console) -> None:
@@ -341,8 +363,14 @@ def _run_scan(
     json_output: bool,
     output_file: str | None,
     verbose: bool = False,
+    fail_on: str | None = None,
 ) -> None:
     """Shared back end for ``scan`` and ``demo``: scan, judge, agent, render."""
+    if fail_on is not None and fail_on not in _FAIL_ON_CHOICES:
+        raise typer.BadParameter(
+            f"--fail-on must be one of {_FAIL_ON_CHOICES}, got {fail_on!r}"
+        )
+
     _configure_logging(verbose=verbose)
 
     # Auto-load .env from cwd before resolving any auth-dependent config.
@@ -424,10 +452,15 @@ def _run_scan(
         else:
             # typer.echo, not Console.print: avoid Rich post-processing on JSON.
             typer.echo(text)
-        return
+    else:
+        # Terminal mode.
+        render_terminal(results, show_all=show_all, console=Console())
 
-    # Terminal mode.
-    render_terminal(results, show_all=show_all, console=Console())
+    # CI gate: opt-in non-zero exit when findings meet the --fail-on
+    # threshold. Exit code 1 = "findings met threshold" (distinct from 2,
+    # which the CLI uses for operational errors like an unlaunchable target).
+    if _meets_fail_threshold(results, fail_on):
+        raise typer.Exit(code=1)
 
 
 # ---------------------------------------------------------------------------
@@ -535,6 +568,15 @@ def scan(
         "-v",
         help="Enable mcp-strike debug logging to stderr (parse failures, etc.).",
     ),
+    fail_on: str = typer.Option(
+        None,
+        "--fail-on",
+        help=(
+            "Exit non-zero (code 1) when findings reach this severity: "
+            "'success' (any confirmed vuln) or 'uncertain' (also flag "
+            "unresolved rows). Default: always exit 0. For CI gating."
+        ),
+    ),
 ) -> None:
     """Connect to an MCP server over stdio and run all attacks against it."""
     target_cfg = TargetConfig(
@@ -563,6 +605,7 @@ def scan(
         json_output=json_output,
         output_file=output_file,
         verbose=verbose,
+        fail_on=fail_on,
     )
 
 
@@ -657,6 +700,15 @@ def demo(
         "-v",
         help="Enable mcp-strike debug logging to stderr (parse failures, etc.).",
     ),
+    fail_on: str = typer.Option(
+        None,
+        "--fail-on",
+        help=(
+            "Exit non-zero (code 1) when findings reach this severity: "
+            "'success' (any confirmed vuln) or 'uncertain' (also flag "
+            "unresolved rows). Default: always exit 0. For CI gating."
+        ),
+    ),
 ) -> None:
     """Run all attacks against the bundled deliberately-vulnerable demo server."""
     target_cfg = TargetConfig(
@@ -682,6 +734,7 @@ def demo(
         json_output=json_output,
         output_file=output_file,
         verbose=verbose,
+        fail_on=fail_on,
     )
 
 

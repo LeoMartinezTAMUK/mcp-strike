@@ -8,12 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `--fail-on {success,uncertain}` on `scan` and `demo`: exit non-zero (code 1)
+  when findings reach the given severity, so CI can gate a build on scan
+  results. Default is unchanged (always exit 0). Operational errors keep
+  using exit code 2.
 - `--env KEY=VALUE` (repeatable) on `scan`, so target servers that need
   environment variables to start can be launched. Values are merged onto the
   MCP SDK's minimal default environment; the scanner's own variables (e.g.
   `OPENAI_API_KEY`) are not forwarded unless listed explicitly.
 
 ### Changed
+- Benign-argument generation (used by the active response-stage probes) now
+  picks the first `enum` value when a parameter is constrained, and handles
+  union-typed parameters (e.g. `["string", "null"]`) instead of skipping the
+  tool. Fewer spurious UNCERTAINs, so the probes fire on more real tools.
 - The path-traversal probe now targets both POSIX (`/etc/passwd`) and Windows
   (`win.ini`), probes **every** string parameter (not just the first), and
   fills a tool's other required parameters with benign placeholders so

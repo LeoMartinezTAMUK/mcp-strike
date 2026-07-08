@@ -108,6 +108,33 @@ def test_benign_args_returns_none_when_required_prop_has_no_spec() -> None:
     assert benign_args({"properties": {"x": "not-a-dict"}, "required": ["x"]}) is None
 
 
+def test_benign_args_uses_first_enum_value() -> None:
+    """An enum-constrained param gets an allowed value, not the generic word."""
+    schema = {
+        "properties": {"mode": {"type": "string", "enum": ["read", "write"]}},
+        "required": ["mode"],
+    }
+    assert benign_args(schema) == {"mode": "read"}
+
+
+def test_benign_args_handles_union_typed_property() -> None:
+    """A list-typed `type` (e.g. ["string","null"]) is built, not skipped."""
+    schema = {
+        "properties": {"path": {"type": ["string", "null"]}},
+        "required": ["path"],
+    }
+    assert benign_args(schema) == {"path": "status"}
+
+
+def test_benign_args_union_picks_first_buildable_type() -> None:
+    """The first known scalar type in the union list wins."""
+    schema = {
+        "properties": {"n": {"type": ["integer", "string"]}},
+        "required": ["n"],
+    }
+    assert benign_args(schema) == {"n": 1}
+
+
 # --- path traversal ---------------------------------------------------------
 
 
