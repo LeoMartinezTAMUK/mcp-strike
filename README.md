@@ -133,9 +133,13 @@ Run `mcp-strike --help`, `mcp-strike scan --help`, or `mcp-strike demo --help` f
 # Stdio transport (the only one v0.1 supports; HTTP coming in a later release)
 mcp-strike scan --command python --arg -m --arg your_mcp_server
 mcp-strike scan --command /path/to/your-server --arg --port --arg 8080
+
+# Servers that need environment variables to start:
+mcp-strike scan --command python --arg -m --arg your_mcp_server \
+  --env API_TOKEN=... --env DB_URL=postgres://...
 ```
 
-`--arg` is repeatable; pass each argument separately so quoting works.
+`--arg` is repeatable; pass each argument separately so quoting works. `--env KEY=VALUE` is likewise repeatable. Environment variables are merged onto a minimal default environment, so your own shell secrets (including `OPENAI_API_KEY`) are **not** forwarded to the target server unless you pass them explicitly.
 
 ## JSON output for CI
 

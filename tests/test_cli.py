@@ -21,9 +21,10 @@ import os
 from pathlib import Path
 
 import pytest
+import typer
 from typer.testing import CliRunner
 
-from mcp_strike.cli import app
+from mcp_strike.cli import _parse_env, app
 
 runner = CliRunner()
 
@@ -249,6 +250,46 @@ def test_scan_against_demo_server_completes_successfully() -> None:
     )
     assert result.exit_code == 0, result.output
     # The demo server has planted vulns that static attacks find.
+    assert "SUCCESS" in result.stdout
+
+
+def test_parse_env_builds_dict_and_keeps_equals_in_value() -> None:
+    """KEY=VALUE parsing; only the first `=` splits, so values may contain `=`."""
+    assert _parse_env(["A=1", "URL=postgres://h/db?x=y"]) == {
+        "A": "1",
+        "URL": "postgres://h/db?x=y",
+    }
+
+
+def test_parse_env_empty_is_none() -> None:
+    """No --env means None, so the target keeps the SDK's default environment."""
+    assert _parse_env([]) is None
+
+
+def test_parse_env_rejects_missing_equals() -> None:
+    """A value without `=` is a usage error, not a silent skip."""
+    with pytest.raises(typer.BadParameter):
+        _parse_env(["NOEQUALS"])
+
+
+def test_scan_accepts_env_flag_end_to_end() -> None:
+    """`scan ... --env FOO=bar` wires through and completes (demo ignores it)."""
+    import sys
+
+    result = runner.invoke(
+        app,
+        [
+            "scan",
+            "--command", sys.executable,
+            "--arg", "-m",
+            "--arg", "mcp_strike.demo_server",
+            "--env", "MCP_STRIKE_TEST=1",
+            "--no-notice",
+            "--no-judge",
+            "--no-agent",
+        ],
+    )
+    assert result.exit_code == 0, result.output
     assert "SUCCESS" in result.stdout
 
 

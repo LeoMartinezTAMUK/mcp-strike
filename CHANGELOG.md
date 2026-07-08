@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `--env KEY=VALUE` (repeatable) on `scan`, so target servers that need
+  environment variables to start can be launched. Values are merged onto the
+  MCP SDK's minimal default environment; the scanner's own variables (e.g.
+  `OPENAI_API_KEY`) are not forwarded unless listed explicitly.
+
 ### Changed
 - The path-traversal probe now targets both POSIX (`/etc/passwd`) and Windows
   (`win.ini`), probes **every** string parameter (not just the first), and

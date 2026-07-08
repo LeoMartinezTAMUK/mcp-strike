@@ -143,6 +143,29 @@ def _describe_target_error(exc: BaseException) -> str:
     return f"{type(exc).__name__}: {exc}"
 
 
+def _parse_env(pairs: list[str]) -> dict[str, str] | None:
+    """Parse repeated ``--env KEY=VALUE`` options into a dict (or ``None``).
+
+    Returns ``None`` when nothing was passed, so the target keeps the MCP
+    SDK's minimal default environment. Only the first ``=`` splits key from
+    value, so values may themselves contain ``=``.
+
+    Note on secrets: the SDK merges these on top of its *default* environment
+    (PATH, HOME, ...), which does not include the scanner's own variables. So
+    ``OPENAI_API_KEY`` and friends are never forwarded to the target unless
+    you pass them explicitly here.
+    """
+    if not pairs:
+        return None
+    env: dict[str, str] = {}
+    for item in pairs:
+        key, sep, value = item.partition("=")
+        if not sep or not key:
+            raise typer.BadParameter(f"--env expects KEY=VALUE, got {item!r}")
+        env[key] = value
+    return env
+
+
 def _print_notice(console: Console) -> None:
     """Render the responsible-use notice in a yellow panel."""
     console.print(
@@ -420,6 +443,16 @@ def scan(
     arg: list[str] = typer.Option(
         [], "--arg", "-a", help="Argument for the server (repeatable)."
     ),
+    env: list[str] = typer.Option(
+        [],
+        "--env",
+        "-e",
+        help=(
+            "Environment variable for the target server as KEY=VALUE "
+            "(repeatable). Merged onto a minimal default env; the scanner's "
+            "own variables are not forwarded unless listed here."
+        ),
+    ),
     only: list[str] = typer.Option(
         [],
         "--only",
@@ -504,7 +537,12 @@ def scan(
     ),
 ) -> None:
     """Connect to an MCP server over stdio and run all attacks against it."""
-    target_cfg = TargetConfig(command=command, args=arg, call_timeout=call_timeout)
+    target_cfg = TargetConfig(
+        command=command,
+        args=arg,
+        env=_parse_env(env),
+        call_timeout=call_timeout,
+    )
     run_cfg = RunConfig(
         # `or None` so an empty list (typer's default) is treated as
         # "run everything" by the config model.
