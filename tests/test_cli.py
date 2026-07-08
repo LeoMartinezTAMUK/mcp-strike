@@ -334,7 +334,9 @@ def test_fail_on_rejects_invalid_value() -> None:
     result = runner.invoke(
         app, ["demo", "--no-judge", "--no-agent", "--no-notice", "--fail-on", "bogus"]
     )
-    assert result.exit_code != 0
+    # Exit code 2 = usage/operational error. Asserting the code (not the
+    # rendered message text) keeps this robust across terminal widths.
+    assert result.exit_code == 2, result.output
     assert "fail-on" in result.output.lower()
 
 

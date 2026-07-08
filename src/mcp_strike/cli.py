@@ -367,9 +367,16 @@ def _run_scan(
 ) -> None:
     """Shared back end for ``scan`` and ``demo``: scan, judge, agent, render."""
     if fail_on is not None and fail_on not in _FAIL_ON_CHOICES:
-        raise typer.BadParameter(
-            f"--fail-on must be one of {_FAIL_ON_CHOICES}, got {fail_on!r}"
+        # Use a plain stderr line (not typer.BadParameter): typer renders
+        # BadParameter through Rich into a width-wrapped panel, which makes
+        # the message unreliable to assert on and can fragment across ANSI
+        # codes. This mirrors the other operational errors in this module.
+        typer.echo(
+            "error: --fail-on must be one of "
+            f"{', '.join(repr(c) for c in _FAIL_ON_CHOICES)}, got {fail_on!r}",
+            err=True,
         )
+        raise typer.Exit(code=2)
 
     _configure_logging(verbose=verbose)
 
