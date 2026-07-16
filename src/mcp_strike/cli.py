@@ -421,7 +421,7 @@ def _run_scan(
         # attacks catch their own probe errors (returning UNCERTAIN rows), so
         # by the time we're running them the scan no longer raises. The
         # dominant case is a mistyped --command or a server that fails to
-        # start — the most common first-run mistake. Surface it as one clean
+        # start, the most common first-run mistake. Surface it as one clean
         # line instead of a deep asyncio/anyio traceback.
         typer.echo(
             f"error: could not scan target {target_cfg.command!r}: "

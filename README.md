@@ -15,7 +15,7 @@ mcp-strike demo
 
 That's it. `demo` spins up a bundled deliberately-vulnerable MCP server, scans it, and prints a colorized report. No keys required (the LLM features auto-enable only if you set `OPENAI_API_KEY`).
 
-New here? The [FAQ](FAQ.md) covers the common questions — how it differs from static scanners, whether it's safe to run against your server, data privacy, and CI use.
+New here? The [FAQ](FAQ.md) covers the common questions: how it differs from static scanners, whether it's safe to run against your server, data privacy, and CI use.
 
 ## What you get
 

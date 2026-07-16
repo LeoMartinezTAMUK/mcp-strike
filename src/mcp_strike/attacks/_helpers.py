@@ -88,7 +88,7 @@ def benign_args(schema: dict[str, Any]) -> dict[str, Any] | None:
     "skip this tool".
 
     Strategy: cover the schema's ``required`` properties with placeholder
-    values (see :func:`_placeholder_for_spec`) — the first ``enum`` value
+    values (see :func:`_placeholder_for_spec`): the first ``enum`` value
     when constrained, otherwise a type-keyed constant.
 
     We deliberately don't try to make the args "realistic"; most attacks here
