@@ -111,12 +111,14 @@ Run `mcp-strike --help`, `mcp-strike scan --help`, or `mcp-strike demo --help` f
 | `--notice` / `--no-notice` | Print the responsible-use notice at startup (default on, terminal mode only). |
 | `--json` | Emit JSON to stdout instead of a terminal table. Suppresses the notice. |
 | `--output-file PATH` | Write the JSON report to a file. Implies `--json`. |
+| `--fail-on {success,uncertain}` | Exit non-zero (code 1) when findings reach this severity, for CI gating. Default: always exit 0. |
+| `--verbose` / `-v` | Enable mcp-strike debug logging to stderr (LLM parse failures, etc.). |
 
 **LLM judge**
 
 | Flag | Effect |
 |---|---|
-| `--judge` / `--no-judge` | Force the judge on/off. Default: auto, enabled iff `OPENAI_API_KEY` is set. |
+| `--judge` / `--no-judge` | Force the judge on/off. Default: auto, enabled only when `OPENAI_API_KEY` is set. |
 | `--judge-model NAME` | Override the default judge model (`gpt-4o-mini`). |
 | `--max-llm-calls N` | Cap on real judge LLM calls per run (default 20). |
 
@@ -124,7 +126,7 @@ Run `mcp-strike --help`, `mcp-strike scan --help`, or `mcp-strike demo --help` f
 
 | Flag | Effect |
 |---|---|
-| `--agent` / `--no-agent` | Force the agent on/off. Default: auto, enabled iff `OPENAI_API_KEY` is set. |
+| `--agent` / `--no-agent` | Force the agent on/off. Default: auto, enabled only when `OPENAI_API_KEY` is set. |
 | `--agent-model NAME` | Override the default agent model (`gpt-4o-mini`). |
 | `--agent-max-rounds N` | Per-tool round cap for the agent (default 3). |
 | `--max-agent-calls N` | Cap on real agent LLM calls per run (default 50). |
@@ -226,7 +228,7 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) for project conventions, how to add a n
 
 ## Status & roadmap
 
-Currently **0.1.0 / alpha**. CI gates on `ruff` + `mypy` + `pytest` across Python 3.10 through 3.13; production source has ~96% line coverage. See [`ROADMAP.md`](ROADMAP.md) for what's next.
+Currently **0.1.2 / alpha**. CI gates on `ruff` + `mypy` + `pytest` across Python 3.10 through 3.13; production source has ~96% line coverage. See [`ROADMAP.md`](ROADMAP.md) for what's next.
 
 ## Responsible use
 
